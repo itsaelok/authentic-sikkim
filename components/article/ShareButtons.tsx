@@ -1,13 +1,15 @@
 "use client";
 
 import {
-  Facebook,
-  Twitter,
   MessageCircle,
   Send,
   Link2,
 } from "lucide-react";
 
+import {
+  FaFacebookF,
+  FaXTwitter,
+} from "react-icons/fa6";
 import type { News } from "@/services/news";
 
 interface Props {
@@ -68,8 +70,7 @@ export default function ShareButtons({
           }
           className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-white transition hover:scale-105"
         >
-          <Facebook size={18} />
-          Facebook
+          <FaFacebookF size={18} />
         </button>
 
         <button
@@ -82,7 +83,7 @@ export default function ShareButtons({
           }
           className="flex items-center gap-2 rounded-xl bg-black px-5 py-3 text-white transition hover:scale-105"
         >
-          <Twitter size={18} />
+          <FaXTwitter size={18} />
           X
         </button>
 

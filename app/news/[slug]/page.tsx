@@ -73,8 +73,9 @@ export default async function NewsPage({
     notFound();
   }
 
+if (article.id) {
   await incrementViews(article.id);
-
+}
   return (
     <main className="bg-gray-100">
 

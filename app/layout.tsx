@@ -8,10 +8,9 @@ import Footer from "@/components/layout/Footer";
 
 
 export const metadata = {
+  metadataBase: new URL("https://authenticsikkim.vercel.app"),
   title: "Authentic Sikkim",
   description: "Latest News from Sikkim",
-  manifest: "/manifest.json",
-  themeColor: "#b91c1c",
 };
 
 

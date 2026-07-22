@@ -17,7 +17,7 @@ import {
 import { db } from "@/lib/firebase";
 
 export interface News {
-  id?: string;
+  id: string;
 
   title: string;
   slug: string;
@@ -74,7 +74,9 @@ const newsCollection = collection(db, "news");
 /* CREATE */
 /* ------------------------------------------------ */
 
-export async function addNews(news: News) {
+export async function addNews(
+  news: Omit<News, "id">
+) {
   return addDoc(newsCollection, {
     ...news,
     createdAt: serverTimestamp(),
