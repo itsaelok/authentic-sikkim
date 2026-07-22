@@ -1,0 +1,7936 @@
+﻿==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\admin\login\page.tsx
+==================================================
+"use client";
+
+import {
+  useState,
+} from "react";
+
+import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+
+import {
+  auth,
+} from "@/lib/firebase";
+
+
+
+export default function AdminLoginPage() {
+
+
+  const router =
+    useRouter();
+
+
+
+  const [email,setEmail] =
+    useState("");
+
+  const [password,setPassword] =
+    useState("");
+
+  const [error,setError] =
+    useState("");
+
+  const [loading,setLoading] =
+    useState(false);
+
+
+
+
+
+
+  async function handleLogin(
+    e: React.FormEvent
+  ){
+
+    e.preventDefault();
+
+
+    try {
+
+
+      setLoading(true);
+
+      setError("");
+
+
+
+      const userCredential =
+  await signInWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
+
+
+const user =
+  userCredential.user;
+
+
+
+const token =
+  await user.getIdToken();
+
+
+
+document.cookie =
+  `auth-token=${token}; path=/; max-age=3600; samesite=strict`;
+
+
+
+router.push(
+  "/admin"
+);
+
+
+
+    } catch(error:any){
+
+
+      setError(
+        "Invalid email or password"
+      );
+
+
+    } finally {
+
+
+      setLoading(false);
+
+
+    }
+
+  }
+
+
+
+
+
+
+
+  return (
+
+    <main className="flex min-h-screen items-center justify-center bg-gray-100 px-6">
+
+
+      <form
+
+        onSubmit={handleLogin}
+
+        className="w-full max-w-md rounded-2xl border bg-white p-8 shadow"
+
+      >
+
+
+        <h1 className="text-3xl font-bold">
+
+          Admin Login
+
+        </h1>
+
+
+
+        <p className="mt-2 text-gray-500">
+
+          Authentic Sikkim CMS
+
+        </p>
+
+
+
+
+
+        {error && (
+
+          <div className="mt-5 rounded-lg bg-red-100 p-3 text-sm text-red-700">
+
+            {error}
+
+          </div>
+
+        )}
+
+
+
+
+
+
+        <div className="mt-6 space-y-4">
+
+
+          <input
+
+            type="email"
+
+            placeholder="Email"
+
+            value={email}
+
+            onChange={(e)=>
+              setEmail(
+                e.target.value
+              )
+            }
+
+            className="w-full rounded-lg border px-4 py-3"
+
+            required
+
+          />
+
+
+
+
+          <input
+
+            type="password"
+
+            placeholder="Password"
+
+            value={password}
+
+            onChange={(e)=>
+              setPassword(
+                e.target.value
+              )
+            }
+
+            className="w-full rounded-lg border px-4 py-3"
+
+            required
+
+          />
+
+
+
+        </div>
+
+
+
+
+
+
+        <button
+
+          disabled={loading}
+
+          className="mt-6 w-full rounded-xl bg-red-600 py-3 font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+
+        >
+
+          {loading
+            ? "Logging in..."
+            : "Login"}
+
+        </button>
+
+
+
+      </form>
+
+
+    </main>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\admin\logout\page.tsx
+==================================================
+"use client";
+
+import {
+  useEffect,
+} from "react";
+
+import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  signOut,
+} from "firebase/auth";
+
+import {
+  auth,
+} from "@/lib/firebase";
+
+
+
+export default function LogoutPage() {
+
+
+  const router =
+    useRouter();
+
+
+
+
+  useEffect(() => {
+
+
+    async function logout(){
+
+      await signOut(
+        auth
+      );
+
+
+      document.cookie =
+        "auth-token=; path=/; max-age=0";
+
+
+
+      router.push(
+        "/admin/login"
+      );
+
+    }
+
+
+
+    logout();
+
+
+  },[router]);
+
+
+
+
+  return (
+
+    <div className="flex min-h-screen items-center justify-center">
+
+      <p className="text-lg font-semibold">
+
+        Logging out...
+
+      </p>
+
+    </div>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\admin\media\page.tsx
+==================================================
+"use client";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import Image from "next/image";
+
+import {
+  ref,
+  listAll,
+  getDownloadURL,
+  deleteObject,
+  uploadBytes,
+} from "firebase/storage";
+
+import {
+  storage,
+} from "@/lib/firebase";
+
+
+export default function MediaPage() {
+
+
+  const [images, setImages] =
+    useState<string[]>([]);
+
+
+  const [uploading, setUploading] =
+    useState(false);
+
+
+
+  async function loadImages() {
+
+    try {
+
+      const folder =
+        ref(
+          storage,
+          "news"
+        );
+
+
+      const result =
+        await listAll(folder);
+
+
+      const urls =
+        await Promise.all(
+
+          result.items.map(
+            async (item) =>
+              await getDownloadURL(item)
+          )
+
+        );
+
+
+      setImages(urls);
+
+
+    } catch(error){
+
+      console.error(error);
+
+    }
+
+  }
+
+
+
+
+  useEffect(() => {
+
+    loadImages();
+
+  }, []);
+
+
+
+
+
+  async function uploadImage(
+    e: React.ChangeEvent<HTMLInputElement>
+  ){
+
+    const file =
+      e.target.files?.[0];
+
+
+    if(!file) return;
+
+
+
+    try {
+
+      setUploading(true);
+
+
+      const imageRef =
+        ref(
+          storage,
+          `news/${Date.now()}-${file.name}`
+        );
+
+
+
+      await uploadBytes(
+        imageRef,
+        file
+      );
+
+
+
+      await loadImages();
+
+
+
+    } finally {
+
+      setUploading(false);
+
+    }
+
+  }
+
+
+
+
+
+
+  async function copyUrl(
+    url:string
+  ){
+
+    await navigator.clipboard.writeText(
+      url
+    );
+
+
+    alert(
+      "Image URL copied"
+    );
+
+  }
+
+
+
+
+
+
+  async function removeImage(
+    url:string
+  ){
+
+    const confirmDelete =
+      confirm(
+        "Delete this image?"
+      );
+
+
+    if(!confirmDelete)
+      return;
+
+
+
+    try {
+
+      const imageRef =
+        ref(
+          storage,
+          url
+        );
+
+
+      await deleteObject(
+        imageRef
+      );
+
+
+      loadImages();
+
+
+    }catch(error){
+
+      console.error(error);
+
+    }
+
+  }
+
+
+
+
+
+
+  return (
+
+    <div className="space-y-8">
+
+
+      <div>
+
+        <h1 className="text-3xl font-bold">
+          Media Library
+        </h1>
+
+
+        <p className="mt-2 text-gray-600">
+          Manage uploaded images for news articles.
+        </p>
+
+      </div>
+
+
+
+
+      <div className="rounded-xl border bg-white p-6">
+
+
+        <label className="block text-sm font-semibold">
+
+          Upload Image
+
+        </label>
+
+
+        <input
+
+          type="file"
+
+          accept="image/*"
+
+          onChange={uploadImage}
+
+          className="mt-3 w-full rounded-lg border p-3"
+
+        />
+
+
+
+        {uploading && (
+
+          <p className="mt-3 text-sm text-gray-500">
+
+            Uploading...
+
+          </p>
+
+        )}
+
+
+      </div>
+
+
+
+
+
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+
+
+        {images.map(
+          (url,index)=>(
+
+          <div
+
+            key={index}
+
+            className="overflow-hidden rounded-xl border bg-white"
+
+          >
+
+            <div className="relative h-48">
+
+              <Image
+
+                src={url}
+
+                alt="Uploaded image"
+
+                fill
+
+                className="object-cover"
+
+              />
+
+            </div>
+
+
+
+            <div className="space-y-2 p-4">
+
+
+              <button
+
+                onClick={() =>
+                  copyUrl(url)
+                }
+
+                className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+
+              >
+
+                Copy URL
+
+              </button>
+
+
+
+
+              <button
+
+                onClick={() =>
+                  removeImage(url)
+                }
+
+                className="w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white"
+
+              >
+
+                Delete
+
+              </button>
+
+
+            </div>
+
+
+          </div>
+
+        ))
+
+        }
+
+
+      </div>
+
+
+    </div>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\admin\news\new\page.tsx
+==================================================
+import NewsForm from "@/components/admin/NewsForm";
+
+export default function CreateNewsPage() {
+  return (
+    <div className="space-y-8">
+
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">
+          Add New Article
+        </h1>
+
+        <p className="mt-2 text-gray-600">
+          Create and publish a new Authentic Sikkim news article.
+        </p>
+      </div>
+
+
+      <NewsForm
+        mode="create"
+      />
+
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\admin\news\page.tsx
+==================================================
+import Link from "next/link";
+
+import NewsTable from "@/components/admin/NewsTable";
+
+export default function AdminNewsPage() {
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Manage News
+          </h1>
+
+          <p className="mt-2 text-gray-600">
+            Create, edit, and manage all Authentic Sikkim articles.
+          </p>
+        </div>
+
+        <Link
+          href="/admin/news/new"
+          className="rounded-xl bg-red-600 px-6 py-3 text-center font-semibold text-white transition hover:bg-red-700"
+        >
+          + Add News
+        </Link>
+      </div>
+
+      <NewsTable />
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\admin\layout.tsx
+==================================================
+import type { ReactNode } from "react";
+
+import Sidebar from "@/components/admin/Sidebar";
+import Header from "@/components/admin/Header";
+
+interface Props {
+  children: ReactNode;
+}
+
+export default function AdminLayout({
+  children,
+}: Props) {
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="flex">
+        {/* Sidebar */}
+
+        <Sidebar />
+
+        {/* Main */}
+
+        <div className="flex min-h-screen flex-1 flex-col lg:ml-72">
+          <Header />
+
+          <main className="flex-1 p-6 lg:p-8">
+            <div className="mx-auto max-w-7xl">
+              {children}
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\admin\page.tsx
+==================================================
+import Link from "next/link";
+
+import {
+  getNews,
+  getDashboardStats,
+  getRecentNews,
+} from "@/services/news";
+
+import DashboardCard from "@/components/admin/DashboardCard";
+
+
+
+export default async function AdminDashboardPage() {
+
+
+  const news =
+    await getNews();
+
+
+
+  const stats =
+    getDashboardStats(
+      news
+    );
+
+
+
+  const recent =
+    getRecentNews(
+      news,
+      5
+    );
+
+
+
+
+  return (
+
+    <div className="space-y-8">
+
+
+      <div>
+
+        <h1 className="text-3xl font-bold">
+
+          Dashboard
+
+        </h1>
+
+
+        <p className="mt-2 text-gray-600">
+
+          Manage Authentic Sikkim news platform.
+
+        </p>
+
+
+      </div>
+
+
+
+
+
+      {/* Stats */}
+
+
+      <div className="grid gap-6 md:grid-cols-3">
+
+
+        <DashboardCard
+
+          title="Total Articles"
+
+          value={stats.total}
+
+        />
+
+
+        <DashboardCard
+
+          title="Published"
+
+          value={stats.published}
+
+        />
+
+
+        <DashboardCard
+
+          title="Drafts"
+
+          value={stats.drafts}
+
+        />
+
+
+        <DashboardCard
+
+          title="Featured"
+
+          value={stats.featured}
+
+        />
+
+
+        <DashboardCard
+
+          title="Breaking"
+
+          value={stats.breaking}
+
+        />
+
+
+        <DashboardCard
+
+          title="Total Views"
+
+          value={stats.totalViews}
+
+        />
+
+
+      </div>
+
+
+
+
+
+
+      {/* Recent News */}
+
+
+      <section className="rounded-2xl border bg-white p-6">
+
+
+        <div className="mb-5 flex items-center justify-between">
+
+
+          <h2 className="text-xl font-bold">
+
+            Recent Articles
+
+          </h2>
+
+
+
+          <Link
+
+            href="/admin/news"
+
+            className="text-sm font-semibold text-red-600"
+
+          >
+
+            View All
+
+          </Link>
+
+
+        </div>
+
+
+
+
+
+        <div className="space-y-4">
+
+
+          {recent.map(
+            (item)=>(
+
+
+            <div
+
+              key={item.id}
+
+              className="flex items-center justify-between border-b pb-4"
+
+            >
+
+
+              <div>
+
+                <h3 className="font-semibold">
+
+                  {item.title}
+
+                </h3>
+
+
+                <p className="text-sm text-gray-500">
+
+                  {item.category} â€¢ {item.district}
+
+                </p>
+
+
+              </div>
+
+
+
+
+
+              <span
+
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  
+                  item.published
+
+                  ? "bg-green-100 text-green-700"
+
+                  : "bg-yellow-100 text-yellow-700"
+
+                }`}
+
+              >
+
+                {item.published
+                  ? "Published"
+                  : "Draft"}
+
+              </span>
+
+
+            </div>
+
+
+          ))}
+
+
+        </div>
+
+
+      </section>
+
+
+
+    </div>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\category\[category]\page.tsx
+==================================================
+import Link from "next/link";
+
+import {
+  getCategoryNews,
+} from "@/services/news";
+
+
+
+interface Props {
+
+  params: Promise<{
+    category: string;
+  }>;
+
+}
+
+
+
+
+export default async function CategoryPage({
+  params,
+}: Props) {
+
+
+  const {
+    category,
+  } = await params;
+
+
+
+  const categoryName =
+    category
+      .replace(
+        /-/g,
+        " "
+      )
+      .replace(
+        /\b\w/g,
+        (char) =>
+          char.toUpperCase()
+      );
+
+
+
+  const news =
+    await getCategoryNews(
+      categoryName
+    );
+
+
+
+
+
+  return (
+
+    <main className="min-h-screen bg-gray-50">
+
+
+      <div className="mx-auto max-w-7xl px-6 py-10">
+
+
+        <h1 className="mb-8 text-4xl font-bold">
+
+          {categoryName} News
+
+        </h1>
+
+
+
+
+
+        {news.length === 0 ? (
+
+          <div className="rounded-xl border bg-white p-10 text-center">
+
+            <h2 className="text-xl font-bold">
+
+              No news available
+
+            </h2>
+
+
+            <p className="mt-2 text-gray-500">
+
+              New articles will appear here soon.
+
+            </p>
+
+          </div>
+
+
+        ) : (
+
+
+
+          <div className="grid gap-6 md:grid-cols-3">
+
+
+            {news.map(
+              (item)=>(
+
+
+              <Link
+
+                key={item.id}
+
+                href={`/news/${item.slug}`}
+
+                className="overflow-hidden rounded-2xl border bg-white transition hover:shadow-lg"
+
+              >
+
+
+                <img
+
+                  src={item.image}
+
+                  alt={item.title}
+
+                  className="h-52 w-full object-cover"
+
+                />
+
+
+
+                <div className="p-5">
+
+
+                  <h2 className="font-bold">
+
+                    {item.title}
+
+                  </h2>
+
+
+
+                  <p className="mt-2 text-sm text-gray-500">
+
+                    {item.district}
+
+                  </p>
+
+
+
+                  <p className="mt-3 text-sm text-gray-600">
+
+                    {item.excerpt}
+
+                  </p>
+
+
+                </div>
+
+
+              </Link>
+
+
+            ))}
+
+
+
+          </div>
+
+
+        )}
+
+
+
+      </div>
+
+
+    </main>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\district\[district]\page.tsx
+==================================================
+import Link from "next/link";
+
+import {
+  getDistrictNews,
+} from "@/services/news";
+
+
+
+interface Props {
+
+  params: Promise<{
+    district: string;
+  }>;
+
+}
+
+
+
+export default async function DistrictPage({
+  params,
+}: Props) {
+
+
+  const {
+    district,
+  } = await params;
+
+
+
+  const districtName =
+    district
+      .replace(
+        /-/g,
+        " "
+      )
+      .replace(
+        /\b\w/g,
+        (char) =>
+          char.toUpperCase()
+      );
+
+
+
+  const news =
+    await getDistrictNews(
+      districtName
+    );
+
+
+
+
+  return (
+
+    <main className="min-h-screen bg-gray-50">
+
+
+      <div className="mx-auto max-w-7xl px-6 py-10">
+
+
+        <h1 className="mb-8 text-4xl font-bold">
+
+          {districtName} News
+
+        </h1>
+
+
+
+
+
+        {news.length === 0 ? (
+
+          <div className="rounded-xl border bg-white p-10 text-center">
+
+
+            <h2 className="text-xl font-bold">
+
+              No news available
+
+            </h2>
+
+
+            <p className="mt-2 text-gray-500">
+
+              News from this district will appear here.
+
+            </p>
+
+
+          </div>
+
+
+        ) : (
+
+
+
+          <div className="grid gap-6 md:grid-cols-3">
+
+
+            {news.map(
+              (item)=>(
+
+
+              <Link
+
+                key={item.id}
+
+                href={`/news/${item.slug}`}
+
+                className="overflow-hidden rounded-2xl border bg-white transition hover:shadow-lg"
+
+              >
+
+
+                <img
+
+                  src={item.image}
+
+                  alt={item.title}
+
+                  className="h-52 w-full object-cover"
+
+                />
+
+
+
+                <div className="p-5">
+
+
+                  <h2 className="font-bold">
+
+                    {item.title}
+
+                  </h2>
+
+
+
+                  <p className="mt-2 text-sm text-gray-500">
+
+                    {item.category}
+
+                  </p>
+
+
+
+                  <p className="mt-3 text-sm text-gray-600">
+
+                    {item.excerpt}
+
+                  </p>
+
+
+                </div>
+
+
+              </Link>
+
+
+            ))}
+
+
+          </div>
+
+
+        )}
+
+
+
+      </div>
+
+
+    </main>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\news\edit\[id]\page.tsx
+==================================================
+import {
+  getNewsById,
+} from "@/services/news";
+
+import NewsForm from "@/components/admin/NewsForm";
+
+
+interface Props {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+
+export default async function EditNewsPage({
+  params,
+}: Props) {
+
+
+  const {
+    id,
+  } = await params;
+
+
+
+  const news =
+    await getNewsById(id);
+
+
+
+  if (!news) {
+
+    return (
+      <div className="rounded-xl border bg-white p-10 text-center">
+
+        <h1 className="text-2xl font-bold">
+          Article Not Found
+        </h1>
+
+        <p className="mt-2 text-gray-500">
+          The news article you are looking for does not exist.
+        </p>
+
+      </div>
+    );
+
+  }
+
+
+
+  return (
+    <div className="space-y-8">
+
+
+      <div>
+
+        <h1 className="text-3xl font-bold text-gray-900">
+          Edit Article
+        </h1>
+
+
+        <p className="mt-2 text-gray-600">
+          Update your Authentic Sikkim news article.
+        </p>
+
+      </div>
+
+
+
+      <NewsForm
+        mode="edit"
+        initialData={news}
+      />
+
+
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\news\[slug]\page.tsx
+==================================================
+import {
+  getNewsBySlug,
+} from "@/services/news";
+
+import {
+  notFound,
+} from "next/navigation";
+
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{
+    slug: string;
+  }>;
+}) {
+
+  const { slug } = await params;
+
+
+  const article =
+    await getNewsBySlug(slug);
+
+
+  if (!article) {
+
+    return {
+      title: "News Not Found",
+    };
+
+  }
+
+
+  return {
+
+    title: article.title,
+
+    description: article.excerpt,
+
+  };
+
+}
+
+
+
+export default async function NewsArticlePage({
+
+  params,
+
+}: {
+
+  params: Promise<{
+    slug: string;
+  }>;
+
+}) {
+
+
+  const { slug } = await params;
+
+
+  const article =
+    await getNewsBySlug(slug);
+
+
+
+  if (!article) {
+
+    notFound();
+
+  }
+
+
+
+  return (
+
+    <article className="mx-auto max-w-4xl px-6 py-14">
+
+
+      <div className="mb-6">
+
+        <span className="rounded-full bg-red-100 px-4 py-2 text-sm text-red-600">
+
+          {article.category}
+
+        </span>
+
+      </div>
+
+
+
+      <h1 className="mb-5 text-4xl font-bold leading-tight">
+
+        {article.title}
+
+      </h1>
+
+
+
+
+      <div className="mb-8 flex gap-4 text-sm text-gray-500">
+
+        <span>
+          By {article.author}
+        </span>
+
+
+        <span>
+          {article.publishedAt}
+        </span>
+
+
+        <span>
+          {article.views} views
+        </span>
+
+
+      </div>
+
+
+
+
+
+      {
+        article.image && (
+
+          <img
+
+            src={article.image}
+
+            alt={article.title}
+
+            className="mb-10 h-[450px] w-full rounded-2xl object-cover"
+
+          />
+
+        )
+      }
+
+
+
+
+
+      <p className="mb-8 text-xl text-gray-600">
+
+        {article.excerpt}
+
+      </p>
+
+
+
+
+
+      <div className="prose max-w-none whitespace-pre-line">
+
+        {article.content}
+
+      </div>
+
+
+
+
+    </article>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\news\page.tsx
+==================================================
+"use client";
+
+import { useEffect, useState } from "react";
+
+import {
+  News,
+  getLatestNews,
+  deleteNews,
+  toggleFeatured,
+  toggleBreaking,
+  togglePublished,
+} from "@/services/news";
+
+export default function AdminNewsPage() {
+  const [news, setNews] = useState<News[]>([]);
+
+  async function load() {
+    setNews(await getLatestNews());
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  return (
+    <main className="max-w-7xl mx-auto p-8">
+
+      <h1 className="text-4xl font-bold mb-8">
+        News Manager
+      </h1>
+
+      <div className="space-y-6">
+
+        {news.map((article) => (
+
+          <div
+            key={article.id}
+            className="bg-white rounded-2xl shadow p-6 flex justify-between items-center"
+          >
+
+            <div>
+
+              <h2 className="font-bold text-xl">
+                {article.title}
+              </h2>
+
+              <p className="text-gray-500 mt-2">
+                {article.category}
+              </p>
+
+            </div>
+
+            <div className="flex gap-3">
+
+              <button
+                onClick={async () => {
+                  await toggleFeatured(
+                    article.id!,
+                    !article.featured
+                  );
+                  load();
+                }}
+                className="px-4 py-2 rounded bg-yellow-500 text-white"
+              >
+                Featured
+              </button>
+
+              <button
+                onClick={async () => {
+                  await toggleBreaking(
+                    article.id!,
+                    !article.breaking
+                  );
+                  load();
+                }}
+                className="px-4 py-2 rounded bg-red-600 text-white"
+              >
+                Breaking
+              </button>
+
+              <button
+                onClick={async () => {
+                  await togglePublished(
+                    article.id!,
+                    !article.published
+                  );
+                  load();
+                }}
+                className="px-4 py-2 rounded bg-green-600 text-white"
+              >
+                Publish
+              </button>
+
+              <button
+                onClick={async () => {
+                  if (!confirm("Delete article?")) return;
+
+                  await deleteNews(article.id!);
+
+                  load();
+                }}
+                className="px-4 py-2 rounded bg-black text-white"
+              >
+                Delete
+              </button>
+
+            </div>
+
+          </div>
+
+        ))}
+
+      </div>
+
+    </main>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\search\page.tsx
+==================================================
+"use client";
+
+import {
+  useState,
+  useEffect,
+} from "react";
+
+import Link from "next/link";
+
+import {
+  getNews,
+  searchNews,
+  News,
+} from "@/services/news";
+
+
+
+export default function SearchPage() {
+
+
+  const [keyword,setKeyword] =
+    useState("");
+
+
+  const [news,setNews] =
+    useState<News[]>([]);
+
+
+
+  const [results,setResults] =
+    useState<News[]>([]);
+
+
+
+  const [loading,setLoading] =
+    useState(true);
+
+
+
+
+
+  useEffect(()=>{
+
+
+    async function load(){
+
+      const data =
+        await getNews();
+
+
+      setNews(data);
+
+      setResults(data);
+
+
+      setLoading(false);
+
+    }
+
+
+    load();
+
+
+  },[]);
+
+
+
+
+
+
+  function handleSearch(
+    value:string
+  ){
+
+    setKeyword(value);
+
+
+    const filtered =
+      searchNews(
+        news,
+        value
+      );
+
+
+    setResults(filtered);
+
+  }
+
+
+
+
+
+
+  return (
+
+    <main className="min-h-screen bg-gray-50">
+
+
+      <div className="mx-auto max-w-5xl px-6 py-10">
+
+
+        <h1 className="text-4xl font-bold">
+
+          Search News
+
+        </h1>
+
+
+
+        <input
+
+          type="text"
+
+          value={keyword}
+
+          onChange={(e)=>
+            handleSearch(
+              e.target.value
+            )
+          }
+
+          placeholder="Search Sikkim news..."
+
+          className="mt-6 w-full rounded-xl border bg-white px-5 py-4 outline-none focus:border-red-500"
+
+        />
+
+
+
+
+
+
+        {loading ? (
+
+          <p className="mt-8">
+
+            Loading...
+
+          </p>
+
+
+        ) : (
+
+
+
+          <div className="mt-8 space-y-5">
+
+
+            {results.length === 0 ? (
+
+              <div className="rounded-xl border bg-white p-8 text-center">
+
+                No news found.
+
+              </div>
+
+
+            ) : (
+
+
+              results.map(
+                (item)=>(
+
+
+                <Link
+
+                  key={item.id}
+
+                  href={`/news/${item.slug}`}
+
+                  className="block rounded-xl border bg-white p-5 hover:shadow-md"
+
+                >
+
+
+                  <h2 className="text-xl font-bold">
+
+                    {item.title}
+
+                  </h2>
+
+
+
+                  <p className="mt-2 text-gray-600">
+
+                    {item.excerpt}
+
+                  </p>
+
+
+
+                  <div className="mt-3 text-sm text-gray-500">
+
+                    {item.category} â€¢ {item.district}
+
+                  </div>
+
+
+                </Link>
+
+
+              ))
+
+            )}
+
+
+
+          </div>
+
+
+        )}
+
+
+
+      </div>
+
+
+    </main>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\layout.tsx
+==================================================
+import type { Metadata } from "next";
+
+import "./globals.css";
+
+import Navbar from "@/components/public/Navbar";
+import Footer from "@/components/public/Footer";
+
+
+
+export const metadata: Metadata = {
+
+  title:
+    "Authentic Sikkim | Latest Sikkim News",
+
+  description:
+    "Authentic Sikkim brings latest news, updates, politics, tourism, education, culture and local stories from Sikkim.",
+
+};
+
+
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+
+
+  return (
+
+    <html lang="en">
+
+      <body>
+
+
+        <Navbar />
+
+
+        <main>
+
+          {children}
+
+        </main>
+
+
+        <Footer />
+
+
+      </body>
+
+    </html>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\not-found.tsx
+==================================================
+import Link from "next/link";
+
+export default function NotFound() {
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center text-center px-6">
+
+      <h1 className="text-7xl font-bold text-red-600">
+        404
+      </h1>
+
+      <p className="mt-6 text-xl">
+        The page you are looking for does not exist.
+      </p>
+
+      <Link
+        href="/"
+        className="mt-8 bg-red-600 text-white px-6 py-3 rounded-lg"
+      >
+        Go Home
+      </Link>
+
+    </main>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\page.tsx
+==================================================
+import Link from "next/link";
+
+import {
+  getLatestNews,
+  getFeaturedNews,
+  getBreakingNews,
+} from "@/services/news";
+
+
+
+export default async function HomePage() {
+
+
+ const featured = await getFeaturedNews().catch(()=>[]);
+const latest = await getLatestNews().catch(()=>[]);
+const breaking = await getBreakingNews().catch(()=>[]);
+
+
+
+
+  return (
+
+    <main className="min-h-screen bg-gray-50">
+
+
+      {/* Breaking News */}
+
+      {breaking.length > 0 && (
+
+        <div className="bg-red-600 text-white">
+
+          <div className="mx-auto flex max-w-7xl gap-4 px-6 py-3">
+
+            <span className="font-bold">
+              BREAKING
+            </span>
+
+
+            <p className="truncate">
+
+              {breaking[0].title}
+
+            </p>
+
+          </div>
+
+        </div>
+
+      )}
+
+
+
+
+
+
+      <div className="mx-auto max-w-7xl space-y-10 px-6 py-10">
+
+
+        {/* Header */}
+
+        <section>
+
+          <h1 className="text-4xl font-bold">
+
+            Authentic Sikkim
+
+          </h1>
+
+
+          <p className="mt-2 text-gray-600">
+
+            Latest news and updates from Sikkim.
+
+          </p>
+
+
+        </section>
+
+
+
+
+
+
+
+        {/* Featured */}
+
+        {featured.length > 0 && (
+
+          <section>
+
+            <h2 className="mb-5 text-2xl font-bold">
+
+              Featured News
+
+            </h2>
+
+
+
+            <div className="grid gap-6 md:grid-cols-3">
+
+
+              {featured.map(
+                (item)=>(
+
+
+                <Link
+
+                  key={item.id}
+
+                  href={`/news/${item.slug}`}
+
+                  className="overflow-hidden rounded-2xl border bg-white"
+
+                >
+
+                  <img
+
+                    src={item.image}
+
+                    alt={item.title}
+
+                    className="h-56 w-full object-cover"
+
+                  />
+
+
+
+                  <div className="p-5">
+
+
+                    <h3 className="font-bold">
+
+                      {item.title}
+
+                    </h3>
+
+
+                    <p className="mt-2 text-sm text-gray-500">
+
+                      {item.district}
+
+                    </p>
+
+
+                  </div>
+
+
+                </Link>
+
+
+              ))
+
+              }
+
+
+            </div>
+
+
+          </section>
+
+        )}
+
+
+
+
+
+
+
+
+        {/* Latest */}
+
+        <section>
+
+
+          <h2 className="mb-5 text-2xl font-bold">
+
+            Latest News
+
+          </h2>
+
+
+
+          <div className="space-y-5">
+
+
+            {latest.slice(0,10).map(
+              (item)=>(
+
+
+              <article
+
+                key={item.id}
+
+                className="rounded-xl border bg-white p-5"
+
+              >
+
+
+                <Link
+
+                  href={`/news/${item.slug}`}
+
+                >
+
+                  <h3 className="text-xl font-bold hover:text-red-600">
+
+                    {item.title}
+
+                  </h3>
+
+
+                </Link>
+
+
+
+                <p className="mt-2 text-gray-600">
+
+                  {item.excerpt}
+
+                </p>
+
+
+
+                <div className="mt-3 text-sm text-gray-500">
+
+                  {item.category} â€¢ {item.district}
+
+                </div>
+
+
+              </article>
+
+
+            ))
+
+            }
+
+
+          </div>
+
+
+        </section>
+
+
+
+      </div>
+
+
+
+    </main>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\robots.ts
+==================================================
+import {
+  MetadataRoute,
+} from "next";
+
+
+
+export default function robots()
+: MetadataRoute.Robots {
+
+
+  return {
+
+
+    rules: {
+
+      userAgent:
+        "*",
+
+      allow:
+        "/",
+
+      disallow:
+        "/admin/",
+
+    },
+
+
+    sitemap:
+      "https://authenticsikkim.com/sitemap.xml",
+
+  };
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\app\sitemap.ts
+==================================================
+import {
+  MetadataRoute,
+} from "next";
+
+import {
+  getNews,
+} from "@/services/news";
+
+
+
+export default async function sitemap()
+: Promise<MetadataRoute.Sitemap> {
+
+
+  const baseUrl =
+    "https://authenticsikkim.com";
+
+
+
+  let newsPages:
+  MetadataRoute.Sitemap = [];
+
+
+
+  try {
+
+
+    const news =
+      await getNews();
+
+
+
+    newsPages =
+      news.map(
+        (item)=>({
+
+          url:
+            `${baseUrl}/news/${item.slug}`,
+
+          lastModified:
+            new Date(),
+
+
+          changeFrequency:
+            "daily",
+
+
+          priority:
+            0.8,
+
+        })
+
+      );
+
+
+  }
+
+  catch(error){
+
+    console.log(
+      "Sitemap news fetch failed",
+      error
+    );
+
+  }
+
+
+
+
+
+
+  return [
+
+
+    {
+
+      url:
+        baseUrl,
+
+      lastModified:
+        new Date(),
+
+      changeFrequency:
+        "daily",
+
+      priority:
+        1,
+
+    },
+
+
+
+    {
+
+      url:
+        `${baseUrl}/education`,
+
+      lastModified:
+        new Date(),
+
+      changeFrequency:
+        "weekly",
+
+      priority:
+        0.7,
+
+    },
+
+
+
+    {
+
+      url:
+        `${baseUrl}/sports`,
+
+      lastModified:
+        new Date(),
+
+      changeFrequency:
+        "weekly",
+
+      priority:
+        0.7,
+
+    },
+
+
+
+    {
+
+      url:
+        `${baseUrl}/contact`,
+
+      lastModified:
+        new Date(),
+
+      changeFrequency:
+        "monthly",
+
+      priority:
+        0.5,
+
+    },
+
+
+    ...newsPages,
+
+
+  ];
+
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\admin\DashboardCard.tsx
+==================================================
+interface Props {
+  title: string;
+  value: string | number;
+}
+
+export default function DashboardCard({
+  title,
+  value,
+}: Props) {
+  return (
+    <div className="rounded-2xl border bg-white p-6 transition hover:shadow-md">
+      <p className="text-sm font-medium text-gray-500">
+        {title}
+      </p>
+
+      <h2 className="mt-3 text-3xl font-bold text-gray-900">
+        {value}
+      </h2>
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\admin\Header.tsx
+==================================================
+"use client";
+
+import Link from "next/link";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+
+
+export default function Header() {
+
+
+  const [date,setDate] =
+    useState("");
+
+
+
+  useEffect(()=>{
+
+    setDate(
+
+      new Date()
+        .toLocaleDateString(
+          "en-IN",
+          {
+            day:"2-digit",
+            month:"long",
+            year:"numeric",
+          }
+        )
+
+    );
+
+  },[]);
+
+
+
+
+  return (
+
+    <header className="flex items-center justify-between border-b bg-white px-8 py-5">
+
+
+      <div>
+
+
+        <h1 className="text-2xl font-bold text-gray-900">
+
+          Admin Dashboard
+
+        </h1>
+
+
+        <p className="mt-1 text-sm text-gray-500">
+
+          {date}
+
+        </p>
+
+
+      </div>
+
+
+
+
+
+      <div className="flex items-center gap-4">
+
+
+        <div className="hidden text-right sm:block">
+
+
+          <p className="font-semibold">
+
+            Administrator
+
+          </p>
+
+
+          <p className="text-sm text-gray-500">
+
+            Authentic Sikkim
+
+          </p>
+
+
+        </div>
+
+
+
+
+
+        <Link
+
+          href="/admin/logout"
+
+          className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+
+        >
+
+          Logout
+
+        </Link>
+
+
+
+      </div>
+
+
+
+    </header>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\admin\NewsForm.tsx
+==================================================
+"use client";
+
+import {
+  useState,
+} from "react";
+
+import {
+  addNews,
+  generateSlug,
+  calculateReadTime,
+  NEWS_CATEGORIES,
+  DISTRICTS,
+} from "@/services/news";
+
+import {
+  uploadImage,
+} from "@/lib/cloudinary";
+
+
+
+import type { News } from "@/services/news";
+
+
+interface NewsFormProps {
+
+  mode?: "create" | "edit";
+
+  initialData?: News;
+
+}
+
+
+export default function NewsForm(
+  {
+    mode = "create",
+    initialData,
+  }: NewsFormProps
+) {
+
+
+  const [loading,setLoading] =
+    useState(false);
+
+
+  const [imageLoading,setImageLoading] =
+    useState(false);
+
+
+
+  const [form,setForm] =
+    useState({
+
+      title:"",
+      excerpt:"",
+      content:"",
+      image:"",
+      category:"Latest",
+      district:"Gangtok",
+      author:"Authentic Sikkim",
+      featured:false,
+      breaking:false,
+      published:false,
+
+    });
+
+
+
+
+
+  function update(
+    key:string,
+    value:any
+  ){
+
+    setForm({
+
+      ...form,
+
+      [key]:value,
+
+    });
+
+  }
+
+
+
+
+
+  async function handleImage(
+    e:React.ChangeEvent<HTMLInputElement>
+  ){
+
+    const file =
+      e.target.files?.[0];
+
+
+    if(!file) return;
+
+
+    try{
+
+      setImageLoading(true);
+
+
+      const url =
+        await uploadImage(file);
+
+
+
+      update(
+        "image",
+        url
+      );
+
+
+    }
+
+    catch(error){
+
+      alert(
+        "Image upload failed"
+      );
+
+    }
+
+    finally{
+
+      setImageLoading(false);
+
+    }
+
+  }
+
+
+
+
+
+
+
+  async function submit(){
+
+    if(!form.title){
+
+      alert(
+        "Title required"
+      );
+
+      return;
+
+    }
+
+
+
+    try{
+
+
+      setLoading(true);
+
+
+
+      await addNews({
+
+        ...form,
+
+        slug:
+          generateSlug(
+            form.title
+          ),
+
+
+        publishedAt:
+          new Date()
+          .toLocaleDateString(
+            "en-GB"
+          ),
+
+
+        readTime:
+          calculateReadTime(
+            form.content
+          ),
+
+
+        views:0,
+
+      });
+
+
+
+      alert(
+        "News added successfully"
+      );
+
+
+
+      window.location.reload();
+
+
+
+    }
+
+    catch(error){
+
+      console.log(error);
+
+      alert(
+        "Failed to add news"
+      );
+
+    }
+
+
+    finally{
+
+      setLoading(false);
+
+    }
+
+
+  }
+
+
+
+
+
+
+
+return (
+
+<div className="space-y-6 rounded-2xl border bg-white p-6">
+
+
+<h2 className="text-2xl font-bold">
+Create News
+</h2>
+
+
+
+
+<input
+
+className="w-full rounded-lg border p-3"
+
+placeholder="News title"
+
+value={form.title}
+
+onChange={
+(e)=>update(
+"title",
+e.target.value
+)
+}
+
+/>
+
+
+
+
+<textarea
+
+className="w-full rounded-lg border p-3"
+
+placeholder="Short excerpt"
+
+value={form.excerpt}
+
+onChange={
+(e)=>update(
+"excerpt",
+e.target.value
+)
+}
+
+/>
+
+
+
+
+
+<textarea
+
+className="h-52 w-full rounded-lg border p-3"
+
+placeholder="News content"
+
+value={form.content}
+
+onChange={
+(e)=>update(
+"content",
+e.target.value
+)
+}
+
+/>
+
+
+
+
+
+
+<div>
+
+<label className="font-semibold">
+Upload Image
+</label>
+
+
+<input
+
+type="file"
+
+accept="image/*"
+
+onChange={handleImage}
+
+/>
+
+
+{
+imageLoading &&
+<p className="text-sm text-gray-500">
+Uploading image...
+</p>
+}
+
+
+{
+form.image &&
+<img
+
+src={form.image}
+
+className="mt-3 h-40 rounded-lg object-cover"
+
+/>
+}
+
+
+</div>
+
+
+
+
+
+
+
+<select
+
+className="w-full rounded-lg border p-3"
+
+value={form.category}
+
+onChange={
+(e)=>update(
+"category",
+e.target.value
+)
+}
+
+>
+
+{
+NEWS_CATEGORIES.map(
+(c)=>(
+
+<option key={c}>
+{c}
+</option>
+
+)
+)
+}
+
+</select>
+
+
+
+
+
+
+
+<select
+
+className="w-full rounded-lg border p-3"
+
+value={form.district}
+
+onChange={
+(e)=>update(
+"district",
+e.target.value
+)
+}
+
+>
+
+{
+DISTRICTS.map(
+(d)=>(
+
+<option key={d}>
+{d}
+</option>
+
+)
+)
+}
+
+</select>
+
+
+
+
+
+
+
+<label className="flex gap-2">
+
+<input
+
+type="checkbox"
+
+checked={form.featured}
+
+onChange={
+(e)=>update(
+"featured",
+e.target.checked
+)
+}
+
+/>
+
+Featured
+
+</label>
+
+
+
+
+
+<label className="flex gap-2">
+
+<input
+
+type="checkbox"
+
+checked={form.breaking}
+
+onChange={
+(e)=>update(
+"breaking",
+e.target.checked
+)
+}
+
+/>
+
+Breaking News
+
+</label>
+
+
+
+
+
+<label className="flex gap-2">
+
+<input
+
+type="checkbox"
+
+checked={form.published}
+
+onChange={
+(e)=>update(
+"published",
+e.target.checked
+)
+}
+
+/>
+
+Publish Now
+
+</label>
+
+
+
+
+
+
+
+<button
+
+onClick={submit}
+
+disabled={loading}
+
+className="rounded-xl bg-red-600 px-6 py-3 font-semibold text-white"
+
+>
+
+{
+loading
+?
+"Saving..."
+:
+"Publish News"
+}
+
+</button>
+
+
+
+
+</div>
+
+);
+
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\admin\NewsTable.tsx
+==================================================
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  News,
+  getNews,
+  deleteNews,
+  toggleFeatured,
+  toggleBreaking,
+  togglePublished,
+  searchNews,
+  filterByCategory,
+  filterByDistrict,
+  filterPublished,
+  NEWS_CATEGORIES,
+  DISTRICTS,
+} from "@/services/news";
+
+export default function NewsTable() {
+  const [news, setNews] = useState<News[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [search, setSearch] = useState("");
+
+  const [category, setCategory] =
+    useState("All");
+
+  const [district, setDistrict] =
+    useState("All");
+
+  const [status, setStatus] =
+    useState("All");
+
+  const [page, setPage] =
+    useState(1);
+
+  const pageSize = 10;
+
+  async function loadNews() {
+    try {
+      setLoading(true);
+
+      const data = await getNews();
+
+      setNews(data);
+    } catch (error) {
+      console.error(
+        "Failed to load news:",
+        error
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadNews();
+  }, []);
+
+  const filteredNews = useMemo(() => {
+    let result = [...news];
+
+    result = searchNews(
+      result,
+      search
+    );
+
+    result = filterByCategory(
+      result,
+      category
+    );
+
+    result = filterByDistrict(
+      result,
+      district
+    );
+
+    result = filterPublished(
+      result,
+      status
+    );
+
+    return result;
+  }, [
+    news,
+    search,
+    category,
+    district,
+    status,
+  ]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      filteredNews.length / pageSize
+    )
+  );
+
+  const currentNews =
+    filteredNews.slice(
+      (page - 1) * pageSize,
+      page * pageSize
+    );
+
+  async function handleDelete(
+    id: string
+  ) {
+    const confirmDelete =
+      window.confirm(
+        "Are you sure you want to delete this article?"
+      );
+
+    if (!confirmDelete) return;
+
+    await deleteNews(id);
+
+    loadNews();
+  }
+
+  async function handlePublish(
+    item: News
+  ) {
+    if (!item.id) return;
+
+    await togglePublished(
+      item.id,
+      !item.published
+    );
+
+    loadNews();
+  }
+
+  async function handleFeatured(
+    item: News
+  ) {
+    if (!item.id) return;
+
+    await toggleFeatured(
+      item.id,
+      !item.featured
+    );
+
+    loadNews();
+  }
+
+  async function handleBreaking(
+    item: News
+  ) {
+    if (!item.id) return;
+
+    await toggleBreaking(
+      item.id,
+      !item.breaking
+    );
+
+    loadNews();
+  }
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border bg-white p-8 text-center">
+        Loading news...
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+              {/* Filters */}
+
+      <div className="rounded-xl border bg-white p-5">
+        <div className="grid gap-4 md:grid-cols-4">
+          <input
+            type="text"
+            placeholder="Search articles..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border px-4 py-2 outline-none focus:border-red-500"
+          />
+
+          <select
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border px-4 py-2"
+          >
+            <option value="All">
+              All Categories
+            </option>
+
+            {NEWS_CATEGORIES.map(
+              (item) => (
+                <option
+                  key={item}
+                  value={item}
+                >
+                  {item}
+                </option>
+              )
+            )}
+          </select>
+
+          <select
+            value={district}
+            onChange={(e) => {
+              setDistrict(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border px-4 py-2"
+          >
+            <option value="All">
+              All Districts
+            </option>
+
+            {DISTRICTS.map(
+              (item) => (
+                <option
+                  key={item}
+                  value={item}
+                >
+                  {item}
+                </option>
+              )
+            )}
+          </select>
+
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border px-4 py-2"
+          >
+            <option value="All">
+              All Status
+            </option>
+
+            <option value="Published">
+              Published
+            </option>
+
+            <option value="Draft">
+              Draft
+            </option>
+          </select>
+        </div>
+      </div>
+
+
+      {/* Table */}
+
+      <div className="overflow-x-auto rounded-xl border bg-white">
+        <table className="min-w-full">
+
+          <thead className="bg-gray-100">
+            <tr className="text-left text-sm font-semibold text-gray-700">
+
+              <th className="px-5 py-4">
+                Article
+              </th>
+
+              <th className="px-5 py-4">
+                Category
+              </th>
+
+              <th className="px-5 py-4">
+                District
+              </th>
+
+              <th className="px-5 py-4">
+                Views
+              </th>
+
+              <th className="px-5 py-4">
+                Status
+              </th>
+
+              <th className="px-5 py-4">
+                Featured
+              </th>
+
+              <th className="px-5 py-4">
+                Breaking
+              </th>
+
+              <th className="px-5 py-4 text-right">
+                Actions
+              </th>
+
+            </tr>
+          </thead>
+
+
+          <tbody>
+
+            {currentNews.length === 0 && (
+              <tr>
+                <td
+                  colSpan={8}
+                  className="py-10 text-center text-gray-500"
+                >
+                  No articles found.
+                </td>
+              </tr>
+            )}
+                        {currentNews.map((item) => (
+              <tr
+                key={item.id}
+                className="border-t hover:bg-gray-50"
+              >
+                <td className="px-5 py-4">
+                  <div className="flex gap-4">
+                    <img
+                      src={
+                        item.image ||
+                        "/images/placeholder.jpg"
+                      }
+                      alt={item.title}
+                      className="h-16 w-24 rounded-lg object-cover"
+                    />
+
+                    <div>
+                      <h3 className="max-w-xs font-semibold line-clamp-2">
+                        {item.title}
+                      </h3>
+
+                      <p className="mt-1 text-xs text-gray-500">
+                        {item.author}
+                      </p>
+
+                      <p className="mt-1 text-xs text-gray-400">
+                        {item.publishedAt}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+
+
+                <td className="px-5 py-4">
+                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                    {item.category}
+                  </span>
+                </td>
+
+
+                <td className="px-5 py-4">
+                  {item.district}
+                </td>
+
+
+                <td className="px-5 py-4">
+                  {(item.views ?? 0).toLocaleString()}
+                </td>
+
+
+                <td className="px-5 py-4">
+                  <button
+                    onClick={() =>
+                      handlePublish(item)
+                    }
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      item.published
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {item.published
+                      ? "Published"
+                      : "Draft"}
+                  </button>
+                </td>
+
+
+                <td className="px-5 py-4">
+                  <button
+                    onClick={() =>
+                      handleFeatured(item)
+                    }
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      item.featured
+                        ? "bg-red-100 text-red-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {item.featured
+                      ? "Yes"
+                      : "No"}
+                  </button>
+                </td>
+
+
+                <td className="px-5 py-4">
+                  <button
+                    onClick={() =>
+                      handleBreaking(item)
+                    }
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      item.breaking
+                        ? "bg-orange-100 text-orange-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {item.breaking
+                      ? "Yes"
+                      : "No"}
+                  </button>
+                </td>
+
+
+                <td className="px-5 py-4">
+                  <div className="flex justify-end gap-2">
+
+                    <Link
+                      href={`/admin/news/edit/${item.id}`}
+                      className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    >
+                      Edit
+                    </Link>
+
+
+                    <button
+                      onClick={() =>
+                        handleDelete(item.id!)
+                      }
+                      className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                    >
+                      Delete
+                    </button>
+
+                  </div>
+                </td>
+
+              </tr>
+            ))}
+
+          </tbody>
+
+        </table>
+      </div>
+            {/* Pagination */}
+
+      <div className="flex flex-col items-center justify-between gap-4 rounded-xl border bg-white p-4 md:flex-row">
+
+        <p className="text-sm text-gray-600">
+          Showing{" "}
+          <span className="font-semibold">
+            {filteredNews.length === 0
+              ? 0
+              : (page - 1) * pageSize + 1}
+          </span>
+
+          {" - "}
+
+          <span className="font-semibold">
+            {Math.min(
+              page * pageSize,
+              filteredNews.length
+            )}
+          </span>
+
+          {" of "}
+
+          <span className="font-semibold">
+            {filteredNews.length}
+          </span>{" "}
+          articles
+        </p>
+
+
+        <div className="flex items-center gap-2">
+
+          <button
+            onClick={() =>
+              setPage((prev) =>
+                Math.max(
+                  1,
+                  prev - 1
+                )
+              )
+            }
+            disabled={page === 1}
+            className="rounded-lg border px-4 py-2 text-sm disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+
+          {Array.from(
+            {
+              length: totalPages,
+            },
+            (_, index) =>
+              index + 1
+          ).map(
+            (number) => (
+              <button
+                key={number}
+                onClick={() =>
+                  setPage(number)
+                }
+                className={`h-10 w-10 rounded-lg text-sm font-semibold ${
+                  page === number
+                    ? "bg-red-600 text-white"
+                    : "border hover:bg-gray-100"
+                }`}
+              >
+                {number}
+              </button>
+            )
+          )}
+
+
+          <button
+            onClick={() =>
+              setPage((prev) =>
+                Math.min(
+                  totalPages,
+                  prev + 1
+                )
+              )
+            }
+            disabled={
+              page === totalPages
+            }
+            className="rounded-lg border px-4 py-2 text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\admin\Sidebar.tsx
+==================================================
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+
+const menu = [
+  {
+    name: "Dashboard",
+    href: "/admin",
+  },
+  {
+    name: "Create News",
+    href: "/admin/news/create",
+  },
+  {
+    name: "Manage News",
+    href: "/admin/news",
+  },
+  {
+    name: "Categories",
+    href: "/admin/categories",
+  },
+  {
+    name: "Settings",
+    href: "/admin/settings",
+  },
+];
+
+
+
+export default function Sidebar() {
+
+
+  const pathname =
+    usePathname();
+
+
+
+  return (
+
+    <aside className="min-h-screen w-64 border-r bg-white p-5">
+
+
+      <div className="mb-8">
+
+
+        <h1 className="text-2xl font-bold text-red-600">
+
+          Authentic Sikkim
+
+        </h1>
+
+
+        <p className="text-sm text-gray-500">
+
+          Admin Panel
+
+        </p>
+
+
+      </div>
+
+
+
+
+
+      <nav className="space-y-2">
+
+
+        {
+          menu.map(
+            (item)=>(
+
+              <Link
+
+              key={item.href}
+
+              href={item.href}
+
+              className={`block rounded-lg px-4 py-3 font-medium transition ${
+                
+                pathname === item.href
+
+                ? "bg-red-600 text-white"
+
+                : "hover:bg-gray-100"
+
+              }`}
+
+              >
+
+                {item.name}
+
+              </Link>
+
+            )
+          )
+        }
+
+
+
+      </nav>
+
+
+
+
+
+    </aside>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\common\Logo.tsx
+==================================================
+export default function Logo() {
+  return (
+    <div className="flex items-center gap-3">
+
+      <div className="w-14 h-14 rounded-2xl bg-red-600 text-white flex items-center justify-center text-2xl font-black shadow-lg">
+        AS
+      </div>
+
+      <div>
+
+        <h1 className="text-2xl font-black tracking-tight">
+          Authentic Sikkim
+        </h1>
+
+        <p className="text-xs text-gray-500 font-semibold tracking-widest uppercase">
+          News Portal
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\common\NewsCard.tsx
+==================================================
+import Image from "next/image";
+import Link from "next/link";
+import { User, Eye } from "lucide-react";
+
+export interface NewsCardProps {
+  id?: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  image: string;
+  category: string;
+  author: string;
+  views: number;
+}
+
+export default function NewsCard({
+  slug,
+  title,
+  excerpt,
+  image,
+  category,
+  author,
+  views,
+}: NewsCardProps) {
+  return (
+    <article className="group overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-xl transition duration-300">
+      <Link href={`/news/${slug}`}>
+        <div className="relative h-56 overflow-hidden">
+          <Image
+            src={`/uploads/${image}`}
+            alt={title}
+            fill
+            sizes="(max-width:768px) 100vw, 33vw"
+            className="object-cover transition duration-500 group-hover:scale-105"
+          />
+        </div>
+      </Link>
+
+      <div className="p-5">
+        <span className="inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-red-600">
+          {category}
+        </span>
+
+        <Link href={`/news/${slug}`}>
+          <h3 className="mt-4 text-xl font-bold leading-snug text-gray-900 group-hover:text-red-600 transition">
+            {title}
+          </h3>
+        </Link>
+
+        <p className="mt-3 line-clamp-3 text-gray-600">
+          {excerpt}
+        </p>
+
+        <div className="mt-5 flex items-center justify-between text-sm text-gray-500">
+          <span className="flex items-center gap-1">
+            <User size={16} />
+            {author}
+          </span>
+
+          <span className="flex items-center gap-1">
+            <Eye size={16} />
+            {views}
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\common\SectionHeader.tsx
+==================================================
+interface Props {
+  title: string;
+  subtitle?: string;
+}
+
+export default function SectionHeader({
+  title,
+  subtitle,
+}: Props) {
+  return (
+    <div className="flex items-end justify-between mb-8">
+      <div>
+        <h2 className="text-3xl font-bold text-gray-900">
+          {title}
+        </h2>
+
+        {subtitle && (
+          <p className="text-gray-500 mt-2">
+            {subtitle}
+          </p>
+        )}
+      </div>
+
+      <button className="text-red-600 font-semibold hover:underline">
+        View All â†’
+      </button>
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\common\SectionTitle.tsx
+==================================================
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+
+interface SectionTitleProps {
+  title: string;
+  href?: string;
+}
+
+export default function SectionTitle({
+  title,
+  href,
+}: SectionTitleProps) {
+  return (
+    <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center gap-3">
+        <div className="w-1.5 h-8 rounded-full bg-red-600" />
+
+        <h2 className="text-2xl md:text-3xl font-black text-gray-900">
+          {title}
+        </h2>
+      </div>
+
+      {href && (
+        <Link
+          href={href}
+          className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 font-semibold transition"
+        >
+          View All
+          <ArrowRight size={18} />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\Advertisement.tsx
+==================================================
+export default function Advertisement() {
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-10">
+      <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
+        <h2 className="text-3xl font-bold">
+          Advertisement
+        </h2>
+
+        <p className="text-gray-500 mt-3">
+          Coming in the next batch.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\BreakingNews.tsx
+==================================================
+"use client";
+
+import { useEffect, useState } from "react";
+import { ChevronRight } from "lucide-react";
+
+const breakingNews = [
+  "Heavy rainfall alert issued for North Sikkim; residents advised to avoid unnecessary travel.",
+  "State Government launches new scholarship scheme for higher education students.",
+  "Tourist arrivals in Sikkim reach an all-time high during the summer season.",
+  "Gangtok welcomes record visitors with new eco-tourism initiatives.",
+  "NH-10 restoration work continues; traffic expected to normalize this week.",
+];
+
+export default function BreakingNews() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % breakingNews.length);
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <section className="bg-red-600 text-white shadow-md">
+      <div className="max-w-7xl mx-auto flex items-center h-14">
+
+        {/* Breaking Badge */}
+        <div className="flex items-center gap-2 bg-black px-5 h-full shrink-0 font-bold tracking-wide">
+          <span className="animate-pulse text-red-500">â—</span>
+          BREAKING
+        </div>
+
+        {/* News */}
+        <div className="flex-1 overflow-hidden px-5">
+          <div
+            key={index}
+            className="flex items-center gap-3 whitespace-nowrap animate-[fadeIn_0.5s_ease]"
+          >
+            <ChevronRight size={18} className="text-yellow-300 shrink-0" />
+
+            <p className="font-medium truncate">
+              {breakingNews[index]}
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\Categories.tsx
+==================================================
+const categories = [
+  "Breaking",
+  "Politics",
+  "Education",
+  "Jobs",
+  "Tourism",
+  "Business",
+  "Sports",
+  "Technology",
+  "Health",
+  "Weather",
+];
+
+export default function Categories() {
+  return (
+    <section className="bg-gray-50 border-b">
+
+      <div className="max-w-7xl mx-auto px-6 py-4">
+
+        <div className="flex gap-3 overflow-x-auto">
+
+          {categories.map((category) => (
+
+            <button
+              key={category}
+              className="
+                whitespace-nowrap
+                bg-white
+                px-5
+                py-2
+                rounded-full
+                shadow
+                hover:bg-red-600
+                hover:text-white
+                transition
+                font-medium
+              "
+            >
+              {category}
+            </button>
+
+          ))}
+
+        </div>
+
+      </div>
+
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\CategoryGrid.tsx
+==================================================
+export default function CategoryGrid() {
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-10">
+      <div className="bg-white rounded-2xl border p-8">
+        <h2 className="text-3xl font-bold">Category Grid</h2>
+        <p className="mt-3 text-gray-600">
+          Category Grid is working successfully.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\DistrictNews.tsx
+==================================================
+import SectionTitle from "../common/SectionTitle";
+
+export default function DistrictNews() {
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-12">
+      <SectionTitle title="District News" href="/districts" />
+
+      <div className="bg-white rounded-2xl p-10 shadow">
+        District News Working
+      </div>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\FeaturedStory.tsx
+==================================================
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
+import { Swiper, SwiperSlide } from "swiper/react";
+
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+
+import { getFeaturedNews, News } from "@/services/news";
+
+
+
+export default function FeaturedStory() {
+
+  const [featuredNews, setFeaturedNews] = useState<News[]>([]);
+
+  useEffect(() => {
+    getFeaturedNews().then(setFeaturedNews);
+  }, []);
+
+  return (
+    <section className="max-w-7xl mx-auto px-6 mt-8">
+      <Swiper
+        modules={[Autoplay, Navigation, Pagination]}
+        autoplay={{
+          delay: 5000,
+          disableOnInteraction: false,
+        }}
+        navigation
+        pagination={{ clickable: true }}
+        loop
+        className="rounded-3xl overflow-hidden shadow-xl"
+      >
+        {featuredNews.map((article) => (
+          <SwiperSlide key={article.slug}>
+            <div className="relative h-[550px]">
+              <Image
+  src={`/uploads/${article.image}`}
+                alt={article.title}
+                fill
+                priority
+                className="object-cover"
+              />
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+
+              <div className="absolute bottom-0 left-0 right-0 p-12 text-white">
+                <span className="bg-red-600 px-4 py-2 rounded-full text-sm font-bold">
+                  {article.category}
+                </span>
+
+                <h1 className="text-5xl font-extrabold mt-6 max-w-4xl leading-tight">
+                  {article.title}
+                </h1>
+
+                <p className="mt-6 text-lg text-gray-200 max-w-3xl">
+                  {article.excerpt}
+                </p>
+
+                <div className="flex items-center gap-6 mt-8 text-gray-300">
+  <span>{article.author}</span>
+</div>
+
+                <Link
+                  href={`/news/${article.slug}`}
+                  className="inline-block mt-8 bg-red-600 hover:bg-red-700 transition px-8 py-4 rounded-xl font-bold"
+                >
+                  Read Full Story
+                </Link>
+              </div>
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\governmentJobs.tsx
+==================================================
+import Link from "next/link";
+import { Briefcase, CalendarDays, MapPin, ArrowRight } from "lucide-react";
+
+import SectionTitle from "../common/SectionTitle";
+import { governmentJobs } from "../../data/governmentJobs";
+
+export default function GovernmentJobs() {
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-14">
+
+      <SectionTitle
+        title="Government Jobs"
+        href="/jobs"
+      />
+
+      <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+
+        {governmentJobs.map((job, index) => (
+
+          <div
+            key={job.id}
+            className={`flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 hover:bg-gray-50 transition ${
+              index !== governmentJobs.length - 1
+                ? "border-b"
+                : ""
+            }`}
+          >
+
+            <div className="flex-1">
+
+              <div className="flex items-center gap-3 flex-wrap">
+
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
+                  {job.status}
+                </span>
+
+                <span className="text-sm text-gray-500">
+                  {job.posts} Posts
+                </span>
+
+              </div>
+
+              <h3 className="text-xl font-bold mt-3">
+                {job.title}
+              </h3>
+
+              <div className="flex flex-wrap gap-6 mt-4 text-gray-600 text-sm">
+
+                <span className="flex items-center gap-2">
+                  <Briefcase size={16} />
+                  {job.department}
+                </span>
+
+                <span className="flex items-center gap-2">
+                  <MapPin size={16} />
+                  {job.location}
+                </span>
+
+                <span className="flex items-center gap-2">
+                  <CalendarDays size={16} />
+                  Last Date: {job.lastDate}
+                </span>
+
+              </div>
+
+            </div>
+
+            <Link
+              href={job.link}
+              className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition"
+            >
+              Apply Now
+              <ArrowRight size={18} />
+            </Link>
+
+          </div>
+
+        ))}
+
+      </div>
+
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\HeroSlider.tsx
+==================================================
+"use client";
+
+import Image from "next/image";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+
+const slides = [
+  {
+    id: 1,
+    category: "Breaking",
+    title: "Government launches new development initiative across Sikkim",
+    description:
+      "Major infrastructure, tourism and employment projects announced for the coming financial year.",
+    image:
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600",
+    author: "Authentic Sikkim",
+    date: "19 Jul 2026",
+    readTime: "5 min read",
+  },
+  {
+    id: 2,
+    category: "Tourism",
+    title: "Tourist arrivals continue to rise across Sikkim",
+    description:
+      "Hotels and local businesses report record bookings during the summer season.",
+    image:
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600",
+    author: "Editorial Team",
+    date: "18 Jul 2026",
+    readTime: "4 min read",
+  },
+  {
+    id: 3,
+    category: "Education",
+    title: "Students achieve record success in state examinations",
+    description:
+      "Schools celebrate outstanding performances and national level recognition.",
+    image:
+      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1600",
+    author: "Education Desk",
+    date: "17 Jul 2026",
+    readTime: "3 min read",
+  },
+];
+
+export default function HeroSlider() {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const prev = () =>
+    setCurrent((current - 1 + slides.length) % slides.length);
+
+  const next = () =>
+    setCurrent((current + 1) % slides.length);
+
+  const slide = slides[current];
+
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-8">
+
+      <div className="relative overflow-hidden rounded-3xl shadow-2xl bg-black">
+
+        <div className="relative h-[600px]">
+
+          <Image
+            src={slide.image}
+            alt={slide.title}
+            fill
+            priority
+            className="object-cover transition-all duration-700"
+          />
+
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+
+          <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 text-white">
+
+            <span className="bg-red-600 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest">
+              {slide.category}
+            </span>
+
+            <h1 className="mt-5 text-3xl md:text-5xl font-black max-w-4xl leading-tight">
+              {slide.title}
+            </h1>
+
+            <p className="mt-4 text-lg text-gray-200 max-w-3xl">
+              {slide.description}
+            </p>
+
+            <div className="flex flex-wrap gap-5 mt-6 text-sm text-gray-300">
+              <span>{slide.author}</span>
+              <span>{slide.date}</span>
+              <span>{slide.readTime}</span>
+            </div>
+
+          </div>
+
+          <button
+            onClick={prev}
+            className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full transition"
+          >
+            <ArrowLeft size={22} />
+          </button>
+
+          <button
+            onClick={next}
+            className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full transition"
+          >
+            <ArrowRight size={22} />
+          </button>
+
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrent(index)}
+                className={`h-3 rounded-full transition-all ${
+                  current === index
+                    ? "bg-red-600 w-10"
+                    : "bg-white/60 w-3"
+                }`}
+              />
+            ))}
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\LatestNews.tsx
+==================================================
+"use client";
+
+import { useEffect, useState } from "react";
+
+import SectionTitle from "../common/SectionTitle";
+import NewsCard from "../common/NewsCard";
+
+import { getLatestNews, News } from "@/services/news";
+
+export default function LatestNews() {
+  const [news, setNews] = useState<News[]>([]);
+
+  useEffect(() => {
+    getLatestNews().then(setNews);
+  }, []);
+
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-12">
+      <SectionTitle
+        title="Latest News"
+        href="/news"
+      />
+
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        {news.map((article) => (
+          <NewsCard
+            key={article.id}
+            {...article}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\LatestVideos.tsx
+==================================================
+import Image from "next/image";
+import {
+  Play,
+  Eye,
+  Clock3,
+  ArrowRight,
+} from "lucide-react";
+import SectionHeader from "../common/SectionHeader";
+
+const videos = [
+  {
+    id: 1,
+    title: "Top 10 Places to Visit in Sikkim 2026",
+    image: "/images/videos/video1.jpg",
+    duration: "12:45",
+    views: "48K",
+    date: "2 Days Ago",
+    category: "Tourism",
+  },
+  {
+    id: 2,
+    title: "Complete SMIT Admission Guide",
+    image: "/images/videos/video2.jpg",
+    duration: "09:30",
+    views: "19K",
+    date: "Yesterday",
+    category: "Education",
+  },
+  {
+    id: 3,
+    title: "Government Jobs Weekly Update",
+    image: "/images/videos/video3.jpg",
+    duration: "15:18",
+    views: "25K",
+    date: "Today",
+    category: "Jobs",
+  },
+  {
+    id: 4,
+    title: "Gangtok Travel Vlog",
+    image: "/images/videos/video4.jpg",
+    duration: "18:11",
+    views: "62K",
+    date: "Today",
+    category: "Travel",
+  },
+];
+
+export default function LatestVideos() {
+  const featured = videos[0];
+
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-20">
+
+      <SectionHeader
+        title="Latest Videos"
+        subtitle="Watch the latest news, travel stories and interviews"
+      />
+
+      <div className="grid lg:grid-cols-3 gap-8">
+
+        {/* Featured Video */}
+
+        <div className="lg:col-span-2 bg-white rounded-3xl overflow-hidden shadow-lg group">
+
+          <div className="relative h-[500px]">
+
+            <Image
+              src={featured.image}
+              alt={featured.title}
+              fill
+              className="object-cover group-hover:scale-105 transition duration-700"
+            />
+
+            <div className="absolute inset-0 bg-black/40" />
+
+            <button className="absolute inset-0 flex items-center justify-center">
+
+              <div className="w-24 h-24 rounded-full bg-red-600/90 flex items-center justify-center hover:scale-110 transition">
+
+                <Play
+                  size={42}
+                  className="fill-white text-white ml-1"
+                />
+
+              </div>
+
+            </button>
+
+            <div className="absolute bottom-5 right-5 bg-black/80 text-white px-3 py-1 rounded-lg text-sm">
+
+              {featured.duration}
+
+            </div>
+
+          </div>
+
+          <div className="p-8">
+
+            <span className="bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
+              {featured.category}
+            </span>
+
+            <h2 className="text-3xl font-bold mt-5">
+              {featured.title}
+            </h2>
+
+            <div className="flex flex-wrap gap-6 mt-6 text-gray-500">
+
+              <div className="flex items-center gap-2">
+                <Eye size={17} />
+                {featured.views} Views
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Clock3 size={17} />
+                {featured.date}
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* Video List */}
+
+        <div className="space-y-6">
+
+          {videos.slice(1).map((video) => (
+
+            <article
+              key={video.id}
+              className="bg-white rounded-2xl overflow-hidden shadow hover:shadow-xl transition group"
+            >
+
+              <div className="flex">
+
+                <div className="relative w-40 h-32">
+
+                  <Image
+                    src={video.image}
+                    alt={video.title}
+                    fill
+                    className="object-cover group-hover:scale-110 transition duration-500"
+                  />
+
+                  <div className="absolute inset-0 bg-black/25" />
+
+                  <div className="absolute bottom-2 right-2 bg-black text-white text-xs px-2 py-1 rounded">
+
+                    {video.duration}
+
+                  </div>
+
+                </div>
+
+                <div className="flex-1 p-4">
+
+                  <span className="bg-red-100 text-red-600 text-xs px-3 py-1 rounded-full">
+
+                    {video.category}
+
+                  </span>
+
+                  <h3 className="font-bold mt-3 leading-6 group-hover:text-red-600 transition">
+
+                    {video.title}
+
+                  </h3>
+
+                  <div className="flex items-center gap-4 mt-4 text-sm text-gray-500">
+
+                    <div className="flex items-center gap-1">
+                      <Eye size={15} />
+                      {video.views}
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <Clock3 size={15} />
+                      {video.date}
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </article>
+
+          ))}
+
+        </div>
+
+      </div>
+
+      <div className="text-center mt-12">
+
+        <button className="bg-red-600 hover:bg-red-700 text-white px-10 py-4 rounded-xl font-semibold inline-flex items-center gap-3 transition">
+
+          View All Videos
+
+          <ArrowRight size={18} />
+
+        </button>
+
+      </div>
+
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\Newsletter.tsx
+==================================================
+"use client";
+
+import { useState } from "react";
+
+import {
+  Mail,
+  Send,
+  Users,
+  Bell,
+  CheckCircle2,
+} from "lucide-react";
+
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+} from "firebase/firestore";
+
+import { db } from "@/lib/firebase";
+
+import toast from "react-hot-toast";
+
+export default function Newsletter() {
+  const [email, setEmail] = useState("");
+
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!email.trim()) {
+    toast.error("Please enter your email.");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "subscribers"), {
+      email: email.trim().toLowerCase(),
+      subscribedAt: serverTimestamp(),
+    });
+
+    toast.success("Successfully subscribed!");
+
+    setEmail("");
+
+  } catch (error) {
+    console.error(error);
+
+    toast.error("Subscription failed.");
+  }
+};
+
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-20">
+
+      <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-red-700 via-red-600 to-orange-500 text-white">
+
+        <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-white/10 blur-3xl" />
+
+        <div className="relative grid lg:grid-cols-2 gap-12 p-12 lg:p-16">
+
+          {/* Left */}
+
+          <div>
+
+            <span className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-sm font-semibold">
+
+              <Mail size={18} />
+
+              Newsletter
+
+            </span>
+
+            <h2 className="text-5xl font-bold mt-8 leading-tight">
+
+              Never Miss
+              <br />
+              Breaking News
+
+            </h2>
+
+            <p className="mt-6 text-red-100 text-lg leading-8 max-w-xl">
+
+              Get authentic Sikkim news, Government Jobs,
+              Education updates, Tourism stories and Breaking
+              News delivered directly to your inbox.
+
+            </p>
+
+            <div className="grid sm:grid-cols-3 gap-5 mt-10">
+
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
+
+                <Users size={34} />
+
+                <h3 className="font-bold text-3xl mt-4">
+                  12K+
+                </h3>
+
+                <p className="text-red-100 mt-2">
+                  Subscribers
+                </p>
+
+              </div>
+
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
+
+                <Bell size={34} />
+
+                <h3 className="font-bold text-3xl mt-4">
+                  Daily
+                </h3>
+
+                <p className="text-red-100 mt-2">
+                  Updates
+                </p>
+
+              </div>
+
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
+
+                <CheckCircle2 size={34} />
+
+                <h3 className="font-bold text-3xl mt-4">
+                  100%
+                </h3>
+
+                <p className="text-red-100 mt-2">
+                  Free
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* Right */}
+
+          <div className="bg-white rounded-3xl p-10 text-gray-900 shadow-2xl">
+
+            <h3 className="text-3xl font-bold">
+              Subscribe Today
+            </h3>
+
+            <p className="text-gray-600 mt-4 leading-7">
+
+              Join thousands of readers who trust
+              Authentic Sikkim for fast, reliable
+              and verified news updates.
+
+            </p>
+
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-5 mt-8"
+            >
+
+              <input
+                type="email"
+                required
+                placeholder="Enter your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border border-gray-300 px-5 py-4 outline-none focus:ring-2 focus:ring-red-500"
+              />
+
+              <button
+                type="submit"
+                className="w-full bg-red-600 hover:bg-red-700 transition text-white py-4 rounded-xl font-semibold flex justify-center items-center gap-3"
+              >
+
+                Subscribe Now
+
+                <Send size={18} />
+
+              </button>
+
+            </form>
+
+            <div className="mt-8 border-t pt-8">
+
+              <div className="flex items-center gap-3 text-sm text-gray-600">
+
+                <CheckCircle2
+                  size={18}
+                  className="text-green-600"
+                />
+
+                No Spam. Unsubscribe Anytime.
+
+              </div>
+
+              <div className="flex items-center gap-3 text-sm text-gray-600 mt-3">
+
+                <CheckCircle2
+                  size={18}
+                  className="text-green-600"
+                />
+
+                Breaking News Alerts
+
+              </div>
+
+              <div className="flex items-center gap-3 text-sm text-gray-600 mt-3">
+
+                <CheckCircle2
+                  size={18}
+                  className="text-green-600"
+                />
+
+                Weekly Top Stories
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\SearchBar.tsx
+==================================================
+export default function SearchBar() {
+  return (
+    <section className="bg-white border-b">
+      <div className="max-w-7xl mx-auto px-6 py-5">
+
+        <input
+          type="text"
+          placeholder="ðŸ” Search news..."
+          className="w-full border rounded-xl px-5 py-3 outline-none focus:ring-2 focus:ring-red-600"
+        />
+
+      </div>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\SocialFollow.tsx
+==================================================
+export default function SocialFollow() {
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-10">
+      <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
+        <h2 className="text-3xl font-bold">
+          Social Follow
+        </h2>
+
+        <p className="text-gray-500 mt-3">
+          Coming in the next batch.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\Statistics.tsx
+==================================================
+"use client";
+
+import { motion } from "framer-motion";
+import {
+  Newspaper,
+  Users,
+  Eye,
+  Video,
+  MapPinned,
+  Globe,
+} from "lucide-react";
+
+const stats = [
+  {
+    icon: Newspaper,
+    value: "25,000+",
+    title: "News Articles",
+    description: "Verified stories published across Sikkim.",
+  },
+  {
+    icon: Users,
+    value: "120K+",
+    title: "Monthly Readers",
+    description: "Growing community of loyal readers.",
+  },
+  {
+    icon: Eye,
+    value: "3.8M+",
+    title: "Page Views",
+    description: "Monthly page impressions.",
+  },
+  {
+    icon: Video,
+    value: "850+",
+    title: "Videos",
+    description: "News reports, interviews & documentaries.",
+  },
+  {
+    icon: MapPinned,
+    value: "6",
+    title: "District Coverage",
+    description: "Gangtok, Namchi, Mangan, Gyalshing, Pakyong & Soreng.",
+  },
+  {
+    icon: Globe,
+    value: "24Ã—7",
+    title: "News Coverage",
+    description: "Breaking updates throughout the day.",
+  },
+];
+
+export default function Statistics() {
+  return (
+    <section className="py-24 bg-slate-950 text-white">
+
+      <div className="max-w-7xl mx-auto px-6">
+
+        <div className="text-center max-w-3xl mx-auto">
+
+          <span className="inline-flex px-5 py-2 rounded-full bg-red-600 text-sm font-semibold">
+            Our Growth
+          </span>
+
+          <h2 className="text-5xl font-bold mt-8 leading-tight">
+
+            Trusted News Platform
+            <br />
+            For Every Citizen Of Sikkim
+
+          </h2>
+
+          <p className="text-gray-400 mt-6 text-lg leading-8">
+
+            Authentic Sikkim delivers reliable journalism,
+            local stories, education news, tourism updates,
+            government jobs and breaking news from across
+            the state.
+
+          </p>
+
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-20">
+
+          {stats.map((item, index) => {
+
+            const Icon = item.icon;
+
+            return (
+
+              <motion.div
+                key={item.title}
+                initial={{
+                  opacity: 0,
+                  y: 40,
+                }}
+                whileInView={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                viewport={{
+                  once: true,
+                }}
+                transition={{
+                  delay: index * 0.12,
+                  duration: 0.5,
+                }}
+                className="bg-white/5 border border-white/10 rounded-3xl p-8 hover:bg-white/10 hover:border-red-500 transition-all duration-300"
+              >
+
+                <div className="w-16 h-16 rounded-2xl bg-red-600 flex items-center justify-center">
+
+                  <Icon size={32} />
+
+                </div>
+
+                <h3 className="text-5xl font-bold mt-8">
+
+                  {item.value}
+
+                </h3>
+
+                <h4 className="text-2xl font-semibold mt-5">
+
+                  {item.title}
+
+                </h4>
+
+                <p className="text-gray-400 mt-5 leading-7">
+
+                  {item.description}
+
+                </p>
+
+              </motion.div>
+
+            );
+
+          })}
+
+        </div>
+
+        <div className="mt-24 rounded-3xl bg-gradient-to-r from-red-600 via-red-700 to-orange-500 p-12 text-center">
+
+          <h3 className="text-4xl font-bold">
+
+            Authentic Journalism.
+            Trusted Information.
+            Real Stories.
+
+          </h3>
+
+          <p className="mt-6 text-red-100 max-w-3xl mx-auto text-lg leading-8">
+
+            Our mission is to provide accurate, unbiased and
+            timely reporting that keeps every citizen informed
+            about Sikkim and beyond.
+
+          </p>
+
+          <button className="mt-10 bg-white text-red-600 hover:bg-gray-100 transition px-10 py-4 rounded-xl font-bold">
+
+            Explore Latest News
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\StudentCorner.tsx
+==================================================
+import SectionTitle from "../common/SectionTitle";
+import NewsCard from "../common/NewsCard";
+import { studentNews } from "../../data/studentNews";
+
+export default function StudentCorner() {
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-14">
+      <SectionTitle
+        title="Student Corner"
+        href="/education"
+      />
+
+      <div className="grid gap-8 md:grid-cols-3">
+        {studentNews.map((article) => (
+          <NewsCard
+            key={article.slug}
+            {...article}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\Tourism.tsx
+==================================================
+import SectionTitle from "../common/SectionTitle";
+import NewsCard from "../common/NewsCard";
+import { tourismNews } from "../../data/tourism";
+
+export default function Tourism() {
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-14">
+      <SectionTitle
+        title="Explore Sikkim"
+        href="/tourism"
+      />
+
+      <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
+        {tourismNews.map((article) => (
+          <NewsCard
+            key={article.slug}
+            {...article}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\TrendingSidebar.tsx
+==================================================
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
+import { getTrendingNews, News } from "@/services/news";
+
+export default function TrendingSidebar() {
+  const [news, setNews] = useState<News[]>([]);
+
+  useEffect(() => {
+    getTrendingNews().then(setNews);
+  }, []);
+
+  return (
+    <aside className="space-y-8">
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        <h2 className="text-2xl font-bold mb-6">
+          ðŸ”¥ Trending
+        </h2>
+
+        <div className="space-y-6">
+          {news.map((article, index) => (
+            <Link
+              key={article.id}
+              href={`/news/${article.slug}`}
+              className="flex gap-4 border-b pb-5 last:border-none"
+            >
+              <span className="text-3xl font-black text-red-600">
+                {index + 1}
+              </span>
+
+              <div>
+                <h3 className="font-semibold hover:text-red-600 transition">
+                  {article.title}
+                </h3>
+
+                <p className="text-sm text-gray-500 mt-2">
+                  ðŸ‘ {article.views.toLocaleString()} views
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-br from-red-600 to-red-800 rounded-2xl p-10 text-white text-center">
+        <h3 className="text-3xl font-bold">
+          Advertisement
+        </h3>
+
+        <p className="mt-4 text-red-100">
+          Your advertisement could appear here.
+        </p>
+      </div>
+    </aside>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\home\WeatherWidget.tsx
+==================================================
+export default function WeatherWidget() {
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-10">
+      <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
+        <h2 className="text-3xl font-bold">
+          Weather Widget
+        </h2>
+
+        <p className="text-gray-500 mt-3">
+          Coming in the next batch.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\layout\Footer.tsx
+==================================================
+export default function Footer() {
+  return (
+    <footer className="bg-gray-900 text-white mt-16">
+      <div className="max-w-7xl mx-auto px-6 py-12">
+
+        <div className="grid md:grid-cols-3 gap-10">
+
+          <div>
+            <h2 className="text-2xl font-bold">
+              Authentic Sikkim
+            </h2>
+
+            <p className="mt-4 text-gray-300 leading-7">
+              Your trusted source for news, tourism, education,
+              government jobs, and everything happening in Sikkim.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-lg mb-4">
+              Quick Links
+            </h3>
+
+            <ul className="space-y-2 text-gray-300">
+              <li>Home</li>
+              <li>Latest News</li>
+              <li>Tourism</li>
+              <li>Government Jobs</li>
+              <li>Student Corner</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-lg mb-4">
+              Contact
+            </h3>
+
+            <p className="text-gray-300">
+              Email: info@authenticsikkim.com
+            </p>
+
+            <p className="text-gray-300 mt-2">
+              Gangtok, Sikkim, India
+            </p>
+          </div>
+
+        </div>
+
+        <div className="border-t border-gray-700 mt-10 pt-6 text-center text-gray-400">
+          Â© {new Date().getFullYear()} Authentic Sikkim. All Rights Reserved.
+        </div>
+
+      </div>
+    </footer>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\layout\Header.tsx
+==================================================
+"use client";
+
+import Logo from "../common/Logo";
+import Link from "next/link";
+import { Bell, Search, User, CloudSun } from "lucide-react";
+
+export default function Header() {
+  const date = new Intl.DateTimeFormat("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
+
+  return (
+    <header className="bg-white border-b border-gray-200">
+
+      {/* Top Information Bar */}
+      <div className="border-b bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+
+          <div className="flex items-center justify-between h-10 text-sm text-gray-600">
+
+            <div className="flex items-center gap-2">
+              <CloudSun size={16} className="text-yellow-500" />
+              <span>{date}</span>
+            </div>
+
+            <div className="hidden md:flex items-center gap-6">
+
+              <Link
+                href="/about"
+                className="hover:text-red-600 transition"
+              >
+                About
+              </Link>
+
+              <Link
+                href="/contact"
+                className="hover:text-red-600 transition"
+              >
+                Contact
+              </Link>
+
+              <Link
+                href="/privacy"
+                className="hover:text-red-600 transition"
+              >
+                Privacy
+              </Link>
+
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      {/* Main Header */}
+      <div className="max-w-7xl mx-auto px-4 lg:px-6">
+
+        <div className="h-24 flex items-center justify-between">
+
+          {/* Logo */}
+          <Logo />
+
+          {/* Right Section */}
+          <div className="flex items-center gap-3">
+
+            <button
+              className="hidden md:flex w-11 h-11 rounded-xl border border-gray-200 hover:bg-gray-100 transition items-center justify-center"
+              aria-label="Search"
+            >
+              <Search size={20} />
+            </button>
+
+            <button
+              className="hidden md:flex w-11 h-11 rounded-xl border border-gray-200 hover:bg-gray-100 transition items-center justify-center"
+              aria-label="Notifications"
+            >
+              <Bell size={20} />
+            </button>
+
+            <button
+              className="hidden lg:flex w-11 h-11 rounded-xl border border-gray-200 hover:bg-gray-100 transition items-center justify-center"
+              aria-label="Profile"
+            >
+              <User size={20} />
+            </button>
+
+            <Link
+              href="/subscribe"
+              className="
+                bg-red-600
+                hover:bg-red-700
+                transition
+                text-white
+                font-semibold
+                px-6
+                py-3
+                rounded-xl
+                shadow-md
+              "
+            >
+              Subscribe
+            </Link>
+
+          </div>
+
+        </div>
+
+      </div>
+    </header>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\layout\Navbar.tsx
+==================================================
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Menu, Search } from "lucide-react";
+import { useState } from "react";
+
+const navigation = [
+  { name: "Home", href: "/" },
+  { name: "Latest", href: "/latest" },
+  { name: "Sikkim", href: "/category/sikkim" },
+  { name: "India", href: "/category/india" },
+  { name: "World", href: "/category/world" },
+  { name: "Politics", href: "/category/politics" },
+  { name: "Business", href: "/category/business" },
+  { name: "Education", href: "/category/education" },
+  { name: "Jobs", href: "/category/jobs" },
+  { name: "Tourism", href: "/category/tourism" },
+  { name: "Sports", href: "/category/sports" },
+  { name: "Technology", href: "/category/technology" },
+];
+
+export default function Navbar() {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      <nav className="sticky top-0 z-40 bg-white border-y border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto">
+
+          <div className="flex items-center justify-between h-14 px-4">
+
+            {/* Mobile Menu Button */}
+            <button
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open menu"
+            >
+              <Menu size={22} />
+            </button>
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-1 overflow-x-auto">
+
+              {navigation.map((item) => {
+
+                const active =
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href));
+
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap ${
+                      active
+                        ? "bg-red-600 text-white"
+                        : "text-gray-700 hover:bg-red-50 hover:text-red-600"
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Search */}
+            <button
+              className="p-2 rounded-lg hover:bg-gray-100 transition"
+              aria-label="Search"
+            >
+              <Search size={20} />
+            </button>
+
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Drawer */}
+
+      <div
+        className={`fixed inset-0 z-50 transition ${
+          mobileOpen ? "visible" : "invisible"
+        }`}
+      >
+        <div
+          className={`absolute inset-0 bg-black/50 transition-opacity ${
+            mobileOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={() => setMobileOpen(false)}
+        />
+
+        <aside
+          className={`absolute left-0 top-0 h-full w-72 bg-white shadow-xl transition-transform duration-300 ${
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="p-6 border-b">
+
+            <h2 className="text-xl font-bold">
+              Authentic Sikkim
+            </h2>
+
+            <p className="text-sm text-gray-500">
+              News Portal
+            </p>
+
+          </div>
+
+          <nav className="flex flex-col p-3">
+
+            {navigation.map((item) => {
+
+              const active =
+                pathname === item.href ||
+                (item.href !== "/" && pathname.startsWith(item.href));
+
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`px-4 py-3 rounded-lg font-medium transition ${
+                    active
+                      ? "bg-red-600 text-white"
+                      : "hover:bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
+
+          </nav>
+        </aside>
+      </div>
+    </>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\layout\TopBar.tsx
+==================================================
+export default function TopBar() {
+  const today = new Date().toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <div className="bg-gray-900 text-white text-sm">
+      <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-2">
+
+        <div>
+          ðŸ“… {today}
+        </div>
+
+        <div className="flex gap-6">
+          <span>ðŸŒ¤ï¸ Gangtok 18Â°C</span>
+          <span className="text-red-400 font-semibold">
+            LIVE
+          </span>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\news\create\page.tsx
+==================================================
+import NewsForm from "@/components/admin/NewsForm";
+
+
+export default function CreateNewsPage() {
+
+  return (
+
+    <div className="mx-auto max-w-5xl">
+
+      <NewsForm />
+
+    </div>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\news\page.tsx
+==================================================
+import Link from "next/link";
+
+import {
+  getNews,
+  deleteNews,
+} from "@/services/news";
+
+
+
+export default async function AdminNewsPage() {
+
+
+  const news =
+    await getNews();
+
+
+
+
+  return (
+
+    <div className="space-y-6">
+
+
+      <div className="flex items-center justify-between">
+
+
+        <div>
+
+          <h1 className="text-3xl font-bold">
+
+            Manage News
+
+          </h1>
+
+
+          <p className="text-gray-500">
+
+            Create, edit and manage articles
+
+          </p>
+
+        </div>
+
+
+
+        <Link
+
+          href="/admin/news/create"
+
+          className="rounded-xl bg-red-600 px-5 py-3 font-semibold text-white"
+
+        >
+
+          + Add News
+
+        </Link>
+
+
+      </div>
+
+
+
+
+
+
+
+      <div className="overflow-hidden rounded-2xl border bg-white">
+
+
+        <table className="w-full">
+
+
+          <thead className="border-b bg-gray-50">
+
+
+            <tr>
+
+              <th className="p-4 text-left">
+                Title
+              </th>
+
+
+              <th className="p-4">
+                Category
+              </th>
+
+
+              <th className="p-4">
+                Status
+              </th>
+
+
+              <th className="p-4">
+                Action
+              </th>
+
+
+            </tr>
+
+
+          </thead>
+
+
+
+
+
+          <tbody>
+
+
+          {
+            news.map(
+              (item)=>(
+
+
+              <tr
+
+              key={item.id}
+
+              className="border-b"
+
+              >
+
+
+                <td className="p-4">
+
+                  <div className="font-semibold">
+
+                    {item.title}
+
+                  </div>
+
+
+                  <div className="text-sm text-gray-500">
+
+                    {item.district}
+
+                  </div>
+
+
+                </td>
+
+
+
+
+
+                <td className="p-4 text-center">
+
+                  {item.category}
+
+                </td>
+
+
+
+
+
+                <td className="p-4 text-center">
+
+
+                  <span
+
+                  className={`rounded-full px-3 py-1 text-xs ${
+                    
+                    item.published
+
+                    ? "bg-green-100 text-green-700"
+
+                    : "bg-yellow-100 text-yellow-700"
+
+                  }`}
+
+                  >
+
+                    {
+                      item.published
+                      ?
+                      "Published"
+                      :
+                      "Draft"
+                    }
+
+                  </span>
+
+
+
+                  {
+                    item.breaking &&
+                    <span className="ml-2 rounded-full bg-red-100 px-3 py-1 text-xs text-red-700">
+
+                      Breaking
+
+                    </span>
+                  }
+
+
+
+                </td>
+
+
+
+
+
+
+                <td className="space-x-3 p-4 text-center">
+
+
+                  <Link
+
+                  href={`/news/edit/${item.id}`}
+
+                  className="font-semibold text-blue-600"
+
+                  >
+
+                    Edit
+
+                  </Link>
+
+
+
+
+
+                  <Link
+
+                  href={`/news/${item.slug}`}
+
+                  className="font-semibold text-green-600"
+
+                  >
+
+                    View
+
+                  </Link>
+
+
+
+                </td>
+
+
+              </tr>
+
+
+            ))
+          }
+
+
+
+          </tbody>
+
+
+
+        </table>
+
+
+
+      </div>
+
+
+
+    </div>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\public\Footer.tsx
+==================================================
+import Link from "next/link";
+
+
+export default function Footer() {
+
+  return (
+
+    <footer className="mt-16 border-t bg-gray-900 text-white">
+
+
+      <div className="mx-auto grid max-w-7xl gap-8 px-6 py-12 md:grid-cols-4">
+
+
+        {/* Brand */}
+
+        <div>
+
+          <h2 className="text-2xl font-bold text-red-500">
+
+            Authentic Sikkim
+
+          </h2>
+
+
+          <p className="mt-4 text-sm leading-6 text-gray-300">
+
+            Your trusted digital news platform covering
+            Sikkim's latest updates, culture, government,
+            education, tourism and local stories.
+
+          </p>
+
+        </div>
+
+
+
+
+
+        {/* Quick Links */}
+
+        <div>
+
+          <h3 className="mb-4 font-bold">
+
+            Quick Links
+
+          </h3>
+
+
+          <ul className="space-y-3 text-sm text-gray-300">
+
+
+            <li>
+
+              <Link href="/">
+                Home
+              </Link>
+
+            </li>
+
+
+            <li>
+
+              <Link href="/category/politics">
+                Politics
+              </Link>
+
+            </li>
+
+
+            <li>
+
+              <Link href="/category/tourism">
+                Tourism
+              </Link>
+
+            </li>
+
+
+            <li>
+
+              <Link href="/search">
+                Search
+              </Link>
+
+            </li>
+
+
+          </ul>
+
+        </div>
+
+
+
+
+
+        {/* Categories */}
+
+        <div>
+
+          <h3 className="mb-4 font-bold">
+
+            Categories
+
+          </h3>
+
+
+          <ul className="space-y-3 text-sm text-gray-300">
+
+
+            <li>Education</li>
+
+            <li>Business</li>
+
+            <li>Sports</li>
+
+            <li>Culture</li>
+
+
+          </ul>
+
+
+        </div>
+
+
+
+
+
+        {/* Contact */}
+
+        <div>
+
+          <h3 className="mb-4 font-bold">
+
+            Contact
+
+          </h3>
+
+
+          <p className="text-sm text-gray-300">
+
+            Authentic Sikkim News Portal
+
+          </p>
+
+
+          <p className="mt-2 text-sm text-gray-300">
+
+            Sikkim, India
+
+          </p>
+
+
+          <p className="mt-2 text-sm text-gray-300">
+
+            Email: contact@authenticsikkim.com
+
+          </p>
+
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+      <div className="border-t border-gray-700 py-5 text-center text-sm text-gray-400">
+
+        Â© {new Date().getFullYear()} Authentic Sikkim. All rights reserved.
+
+      </div>
+
+
+    </footer>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\public\Navbar.tsx
+==================================================
+import Link from "next/link";
+
+const categories = [
+  "Politics",
+  "Government",
+  "Education",
+  "Tourism",
+  "Business",
+  "Sports",
+  "Health",
+  "Culture",
+];
+
+
+export default function Navbar() {
+
+  return (
+
+    <header className="border-b bg-white">
+
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+
+
+        <Link
+          href="/"
+          className="text-2xl font-bold text-red-600"
+        >
+          Authentic Sikkim
+        </Link>
+
+
+
+        <nav className="hidden items-center gap-5 lg:flex">
+
+          {categories
+            .slice(0,5)
+            .map(
+              (item)=>(
+
+              <Link
+
+                key={item}
+
+                href={`/category/${item.toLowerCase()}`}
+
+                className="text-sm font-medium text-gray-700 hover:text-red-600"
+
+              >
+
+                {item}
+
+              </Link>
+
+            ))}
+
+
+        </nav>
+
+
+
+
+        <Link
+
+          href="/search"
+
+          className="rounded-lg border px-4 py-2 text-sm font-semibold"
+
+        >
+
+          Search
+
+        </Link>
+
+
+
+      </div>
+
+
+    </header>
+
+  );
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\components\NewsCard.tsx
+==================================================
+export default function NewsCard() {
+  const news = [
+    {
+      title: "Sikkim Tourism reaches record visitors",
+      category: "Tourism",
+    },
+    {
+      title: "Government announces new education policy",
+      category: "Education",
+    },
+    {
+      title: "Heavy rainfall expected this week",
+      category: "Weather",
+    },
+    {
+      title: "New government jobs announced",
+      category: "Jobs",
+    },
+    {
+      title: "Gangtok hosts cultural festival",
+      category: "Culture",
+    },
+    {
+      title: "Students receive scholarship support",
+      category: "Education",
+    },
+  ];
+
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-10">
+      <h2 className="text-3xl font-bold mb-8">Latest News</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {news.map((item, index) => (
+          <article
+            key={index}
+            className="bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden"
+          >
+            <div className="h-48 bg-gray-300 flex items-center justify-center">
+              Image
+            </div>
+
+            <div className="p-5">
+              <span className="text-red-600 text-sm font-semibold">
+                {item.category}
+              </span>
+
+              <h3 className="text-xl font-bold mt-2">
+                {item.title}
+              </h3>
+
+              <p className="text-gray-600 mt-3">
+                Click to read the complete story and stay updated with Authentic
+                Sikkim.
+              </p>
+
+              <button className="mt-5 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                Read More
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\constants\categories.ts
+==================================================
+export const categories = [
+  "Breaking",
+  "Politics",
+  "Business",
+  "Education",
+  "Jobs",
+  "Tourism",
+  "Sports",
+  "Technology",
+  "Health",
+  "Environment",
+  "Culture",
+];
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\data\categories.ts
+==================================================
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\data\districtNews.ts
+==================================================
+export const governmentJobs = [
+  {
+    id: 1,
+    title: "SPSC Assistant Engineer Recruitment 2026",
+    department: "Sikkim Public Service Commission",
+    location: "Gangtok",
+    lastDate: "25 Jul 2026",
+    posts: 42,
+    status: "Open",
+    link: "/jobs/spsc-assistant-engineer-2026",
+  },
+  {
+    id: 2,
+    title: "High Court Clerk Recruitment",
+    department: "High Court of Sikkim",
+    location: "Gangtok",
+    lastDate: "30 Jul 2026",
+    posts: 18,
+    status: "Open",
+    link: "/jobs/high-court-clerk-2026",
+  },
+  {
+    id: 3,
+    title: "Forest Guard Recruitment",
+    department: "Forest Department",
+    location: "North Sikkim",
+    lastDate: "02 Aug 2026",
+    posts: 65,
+    status: "Open",
+    link: "/jobs/forest-guard-2026",
+  },
+  {
+    id: 4,
+    title: "Primary School Teacher Recruitment",
+    department: "Education Department",
+    location: "Statewide",
+    lastDate: "10 Aug 2026",
+    posts: 120,
+    status: "Open",
+    link: "/jobs/teacher-2026",
+  },
+];
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\data\districts.ts
+==================================================
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\data\governmentJobs.ts
+==================================================
+export const governmentJobs = [
+  {
+    id: 1,
+    title: "SPSC Assistant Engineer Recruitment 2026",
+    department: "Sikkim Public Service Commission",
+    location: "Gangtok",
+    lastDate: "25 Jul 2026",
+    posts: 42,
+    status: "Open",
+    link: "/jobs/spsc-assistant-engineer-2026",
+  },
+  {
+    id: 2,
+    title: "High Court Clerk Recruitment",
+    department: "High Court of Sikkim",
+    location: "Gangtok",
+    lastDate: "30 Jul 2026",
+    posts: 18,
+    status: "Open",
+    link: "/jobs/high-court-clerk-2026",
+  },
+  {
+    id: 3,
+    title: "Forest Guard Recruitment",
+    department: "Forest Department",
+    location: "North Sikkim",
+    lastDate: "02 Aug 2026",
+    posts: 65,
+    status: "Open",
+    link: "/jobs/forest-guard-2026",
+  },
+  {
+    id: 4,
+    title: "Primary School Teacher Recruitment",
+    department: "Education Department",
+    location: "Statewide",
+    lastDate: "10 Aug 2026",
+    posts: 120,
+    status: "Open",
+    link: "/jobs/teacher-2026",
+  },
+];
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\data\hero.ts
+==================================================
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\data\latestNews.ts
+==================================================
+export const latestNews = [
+  {
+    slug: "north-sikkim-road-restoration",
+    title: "Road restoration work speeds up in North Sikkim",
+    excerpt:
+      "Authorities have accelerated restoration work following heavy rainfall, improving connectivity to remote regions.",
+    image:
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200",
+    category: "Infrastructure",
+    author: "Editorial Desk",
+    publishedAt: "19 Jul 2026",
+    readTime: "4 min read",
+  },
+  {
+    slug: "tourism-growth-2026",
+    title: "Tourism sector records highest growth in five years",
+    excerpt:
+      "Hotels, local businesses and transport operators are reporting record occupancy and bookings.",
+    image:
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200",
+    category: "Tourism",
+    author: "Travel Desk",
+    publishedAt: "18 Jul 2026",
+    readTime: "5 min read",
+  },
+  {
+    slug: "education-scholarship",
+    title: "Students receive new state scholarship benefits",
+    excerpt:
+      "Thousands of students are expected to benefit from the newly announced higher education scheme.",
+    image:
+      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200",
+    category: "Education",
+    author: "Education Desk",
+    publishedAt: "18 Jul 2026",
+    readTime: "3 min read",
+  },
+  {
+    slug: "organic-farming",
+    title: "Organic farming continues to strengthen rural economy",
+    excerpt:
+      "Farmers across Sikkim report increased demand for organic produce in national markets.",
+    image:
+      "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1200",
+    category: "Agriculture",
+    author: "Business Desk",
+    publishedAt: "17 Jul 2026",
+    readTime: "5 min read",
+  },
+  {
+    slug: "startup-program",
+    title: "Youth startup initiative attracts hundreds of applicants",
+    excerpt:
+      "The new innovation programme is encouraging entrepreneurship among young professionals.",
+    image:
+      "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1200",
+    category: "Business",
+    author: "Business Desk",
+    publishedAt: "17 Jul 2026",
+    readTime: "4 min read",
+  },
+  {
+    slug: "sports-academy",
+    title: "State sports academy prepares athletes for national events",
+    excerpt:
+      "Training facilities have been upgraded to support athletes competing at the national level.",
+    image:
+      "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1200",
+    category: "Sports",
+    author: "Sports Desk",
+    publishedAt: "16 Jul 2026",
+    readTime: "3 min read",
+  },
+];
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\data\news.ts
+==================================================
+export interface NewsArticle {
+  slug: string;
+  title: string;
+ excerpt: string;
+  image: string;
+  category: string;
+  author: string;
+  publishedAt: string;
+  readTime: string;
+}
+
+export const latestNews: NewsArticle[] = [
+  {
+    slug: "gangtok-tourism-boom",
+    title: "Gangtok records highest tourist arrivals this season",
+    excerpt:
+      "Hotels and local businesses report a sharp increase in visitors during the holiday period.",
+    image:
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200",
+    category: "Tourism",
+    author: "Tourism Desk",
+    publishedAt: "19 Jul 2026",
+    readTime: "4 min read",
+  },
+  {
+    slug: "education-policy",
+    title: "New education initiatives announced for Sikkim students",
+    excerpt:
+      "Scholarship programs and digital classrooms are being expanded across the state.",
+    image:
+      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200",
+    category: "Education",
+    author: "Education Desk",
+    publishedAt: "19 Jul 2026",
+    readTime: "5 min read",
+  },
+  {
+    slug: "startup-growth",
+    title: "Young entrepreneurs drive startup growth in Sikkim",
+    excerpt:
+      "Government-backed initiatives are helping local startups expand rapidly.",
+    image:
+      "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200",
+    category: "Business",
+    author: "Business Desk",
+    publishedAt: "18 Jul 2026",
+    readTime: "3 min read",
+  },
+];
+
+export const featuredNews: NewsArticle[] = latestNews.slice(0, 3);
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\data\statistics.ts
+==================================================
+export const statistics = [
+  {
+    id: 1,
+    label: "Published Articles",
+    value: "12,500+",
+  },
+  {
+    id: 2,
+    label: "Monthly Readers",
+    value: "150K+",
+  },
+  {
+    id: 3,
+    label: "District Coverage",
+    value: "6",
+  },
+  {
+    id: 4,
+    label: "Verified Reporters",
+    value: "48",
+  },
+];
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\data\studentNews.ts
+==================================================
+export const studentNews = [
+  {
+    slug: "sikkim-board-results-2026",
+    title: "Sikkim Board announces excellent Class 12 results",
+    excerpt:
+      "Students across the state recorded one of the highest pass percentages in recent years.",
+    image:
+      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200",
+    category: "Education",
+    author: "Education Desk",
+    publishedAt: "19 Jul 2026",
+    readTime: "3 min read",
+    views: 0,
+  },
+
+  {
+    slug: "new-scholarship-program",
+    title: "New scholarship programme opens for higher education",
+    excerpt:
+      "Eligible students can now apply online through the official state portal.",
+    image:
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1200",
+    category: "Scholarship",
+    author: "Education Desk",
+    publishedAt: "18 Jul 2026",
+    readTime: "4 min read",
+    views: 0,
+  },
+
+  {
+    slug: "engineering-admissions",
+    title: "Engineering admissions begin across Sikkim institutions",
+    excerpt:
+      "Thousands of students are expected to enrol in technical programmes this academic year.",
+    image:
+      "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=1200",
+    category: "Admissions",
+    author: "Campus Desk",
+    publishedAt: "18 Jul 2026",
+    readTime: "5 min read",
+    views: 0,
+  },
+];
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\data\tourism.ts
+==================================================
+export const tourismNews = [
+  {
+    slug: "yumthang-valley-summer",
+    title: "Yumthang Valley welcomes record summer visitors",
+    excerpt:
+      "Tourists from across India are visiting the Valley of Flowers, boosting local businesses.",
+    image:
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200",
+    category: "Tourism",
+    author: "Travel Desk",
+    views: 0,
+  },
+  {
+    slug: "tsomgo-lake-tourism",
+    title: "Tsomgo Lake remains one of Sikkim's top destinations",
+    excerpt:
+      "Improved facilities and better connectivity continue to attract visitors.",
+    image:
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200",
+    category: "Tourism",
+    author: "Travel Desk",
+    views: 0,
+  },
+  {
+    slug: "pelling-tourism-growth",
+    title: "Pelling hotels report full occupancy",
+    excerpt:
+      "The tourism season has generated significant income for local businesses.",
+    image:
+      "https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=1200",
+    category: "Tourism",
+    author: "Travel Desk",
+    views: 0,
+  },
+  {
+    slug: "ravangla-ecotourism",
+    title: "Eco-tourism initiatives expand in Ravangla",
+    excerpt:
+      "Community-led tourism projects are creating sustainable employment.",
+    image:
+      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200",
+    category: "Tourism",
+    author: "Travel Desk",
+    views: 0,
+  },
+];
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\data\videos.ts
+==================================================
+export const latestVideos = [
+  {
+    id: 1,
+    title: "Top 10 Places to Visit in Sikkim",
+    thumbnail:
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200",
+    duration: "8:42",
+    views: "12.4K views",
+    publishedAt: "2 days ago",
+    url: "https://youtube.com",
+  },
+  {
+    id: 2,
+    title: "Gangtok Market Tour 2026",
+    thumbnail:
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200",
+    duration: "12:18",
+    views: "8.1K views",
+    publishedAt: "4 days ago",
+    url: "https://youtube.com",
+  },
+  {
+    id: 3,
+    title: "North Sikkim Road Update",
+    thumbnail:
+      "https://images.unsplash.com/photo-1472396961693-142e6e269027?w=1200",
+    duration: "5:55",
+    views: "21K views",
+    publishedAt: "1 week ago",
+    url: "https://youtube.com",
+  },
+];
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\lib\articles.ts
+==================================================
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\lib\cloudinary.ts
+==================================================
+export async function uploadImage(file: File) {
+
+  const cloudName =
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+
+  const uploadPreset =
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+
+
+  const formData = new FormData();
+
+  formData.append(
+    "file",
+    file
+  );
+
+
+  formData.append(
+    "upload_preset",
+    uploadPreset!
+  );
+
+
+
+  const response = await fetch(
+
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+
+    {
+      method: "POST",
+      body: formData,
+    }
+
+  );
+
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      "Cloudinary upload failed"
+    );
+
+  }
+
+
+
+  const data =
+    await response.json();
+
+
+
+  return data.secure_url;
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\lib\firebase-storage.ts
+==================================================
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
+
+import { storage } from "@/lib/firebase";
+
+
+
+/* ------------------------------------------------ */
+/* UPLOAD IMAGE */
+/* ------------------------------------------------ */
+
+export async function uploadNewsImage(
+  file: File
+) {
+
+  const fileName = `${Date.now()}-${file.name}`;
+
+  const storageRef = ref(
+    storage,
+    `news/${fileName}`
+  );
+
+
+  await uploadBytes(
+    storageRef,
+    file
+  );
+
+
+  const url =
+    await getDownloadURL(storageRef);
+
+
+  return url;
+
+}
+
+
+
+/* ------------------------------------------------ */
+/* DELETE IMAGE */
+/* ------------------------------------------------ */
+
+export async function deleteNewsImage(
+  url: string
+) {
+
+  try {
+
+    const imageRef =
+      ref(
+        storage,
+        url
+      );
+
+
+    await deleteObject(
+      imageRef
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Image delete failed:",
+      error
+    );
+
+  }
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\lib\firebase.ts
+==================================================
+import {
+  initializeApp,
+  getApps,
+} from "firebase/app";
+
+import {
+  getAuth,
+} from "firebase/auth";
+
+import {
+  getFirestore,
+} from "firebase/firestore";
+
+import {
+  getStorage,
+} from "firebase/storage";
+
+
+const firebaseConfig = {
+
+  apiKey:
+    process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+
+  authDomain:
+    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+
+  projectId:
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+
+  storageBucket:
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+
+  messagingSenderId:
+    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+
+  appId:
+    process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+
+};
+
+
+
+const app =
+  getApps().length
+    ? getApps()[0]
+    : initializeApp(firebaseConfig);
+
+
+
+export const auth =
+  getAuth(app);
+
+
+
+export const db =
+  getFirestore(app);
+
+
+
+export const storage =
+  getStorage(app);
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\lib\theme.ts
+==================================================
+export const colors = {
+  primary: "#DC2626",
+  secondary: "#111827",
+  background: "#F9FAFB",
+  card: "#FFFFFF",
+  border: "#E5E7EB",
+  text: "#111827",
+};
+
+export const site = {
+  name: "Authentic Sikkim",
+  slogan: "Truth â€¢ Trust â€¢ Timely News",
+};
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\services\cloudinary.ts
+==================================================
+export async function uploadImage(file: File): Promise<string> {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  formData.append(
+    "upload_preset",
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
+  );
+
+  const cloudName =
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Cloudinary upload failed.");
+  }
+
+  const data = await response.json();
+
+  return data.secure_url;
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\services\news.ts
+==================================================
+import {
+  collection,
+  addDoc,
+  getDocs,
+  getDoc,
+  doc,
+  query,
+  where,
+  orderBy,
+  limit,
+  serverTimestamp,
+  updateDoc,
+  deleteDoc,
+  increment,
+} from "firebase/firestore";
+
+import { db } from "@/lib/firebase";
+
+export interface News {
+  id?: string;
+
+  title: string;
+  slug: string;
+
+  excerpt: string;
+  content: string;
+
+  image: string;
+
+  category: string;
+  district: string;
+
+  author: string;
+
+  featured: boolean;
+  breaking: boolean;
+  published: boolean;
+
+  publishedAt: string;
+  readTime: string;
+
+  views: number;
+
+  createdAt?: any;
+}
+
+export const NEWS_CATEGORIES = [
+  "Latest",
+  "Breaking",
+  "Politics",
+  "Government",
+  "Education",
+  "Tourism",
+  "Business",
+  "Sports",
+  "Technology",
+  "Jobs",
+  "Health",
+  "Culture",
+];
+
+export const DISTRICTS = [
+  "Gangtok",
+  "Namchi",
+  "Gyalshing",
+  "Mangan",
+  "Pakyong",
+  "Soreng",
+];
+
+const newsCollection = collection(db, "news");
+
+/* ------------------------------------------------ */
+/* CREATE */
+/* ------------------------------------------------ */
+
+export async function addNews(news: News) {
+  return addDoc(newsCollection, {
+    ...news,
+    createdAt: serverTimestamp(),
+  });
+}
+
+/* ------------------------------------------------ */
+/* READ ALL */
+/* ------------------------------------------------ */
+
+export async function getNews(): Promise<News[]> {
+  const q = query(
+    newsCollection,
+    orderBy("createdAt", "desc")
+  );
+
+  const snap = await getDocs(q);
+
+  return snap.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as News[];
+}
+
+/* ------------------------------------------------ */
+/* READ BY ID */
+/* ------------------------------------------------ */
+
+export async function getNewsById(id: string) {
+  const ref = doc(db, "news", id);
+
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) return null;
+
+  return {
+    id: snap.id,
+    ...snap.data(),
+  } as News;
+}
+
+/* ------------------------------------------------ */
+/* READ BY SLUG */
+/* ------------------------------------------------ */
+
+export async function getNewsBySlug(slug: string) {
+  const q = query(
+    newsCollection,
+    where("slug", "==", slug),
+    limit(1)
+  );
+
+  const snap = await getDocs(q);
+
+  if (snap.empty) return null;
+
+  return {
+    id: snap.docs[0].id,
+    ...snap.docs[0].data(),
+  } as News;
+}
+
+/* ------------------------------------------------ */
+/* LATEST */
+/* ------------------------------------------------ */
+
+export async function getLatestNews() {
+
+  try {
+
+    const q = query(
+      newsCollection,
+      where("published", "==", true),
+      orderBy("createdAt", "desc")
+    );
+
+
+    const snap = await getDocs(q);
+
+
+    return snap.docs.map((doc)=>({
+      id: doc.id,
+      ...doc.data(),
+    })) as News[];
+
+
+  } catch(error){
+
+    console.log("Latest news error:",error);
+
+    return [];
+
+  }
+
+}
+
+/* ------------------------------------------------ */
+/* FEATURED */
+/* ------------------------------------------------ */
+/* ------------------------------------------------ */
+/* BREAKING */
+/* ------------------------------------------------ */
+
+export async function getBreakingNews(){
+
+  try{
+
+    const q=query(
+      newsCollection,
+      where("breaking","==",true),
+      where("published","==",true),
+      orderBy("createdAt","desc")
+    );
+
+
+    const snap=await getDocs(q);
+
+
+    return snap.docs.map((doc)=>({
+      id:doc.id,
+      ...doc.data(),
+    })) as News[];
+
+
+  }catch(error){
+
+    console.log("Breaking news error:",error);
+
+    return [];
+
+  }
+
+}
+
+/* ------------------------------------------------ */
+/* TRENDING */
+/* ------------------------------------------------ */
+
+export async function getTrendingNews() {
+  const q = query(
+    newsCollection,
+    where("published", "==", true),
+    orderBy("views", "desc"),
+    limit(10)
+  );
+
+  const snap = await getDocs(q);
+
+  return snap.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as News[];
+}
+
+/* ------------------------------------------------ */
+/* CATEGORY */
+/* ------------------------------------------------ */
+
+export async function getCategoryNews(category: string) {
+  const q = query(
+    newsCollection,
+    where("category", "==", category),
+    where("published", "==", true),
+    orderBy("createdAt", "desc")
+  );
+
+  const snap = await getDocs(q);
+
+  return snap.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as News[];
+}
+
+/* ------------------------------------------------ */
+/* DISTRICT */
+/* ------------------------------------------------ */
+
+export async function getFeaturedNews() {
+
+  try {
+
+    const q = query(
+      newsCollection,
+      where("featured", "==", true),
+      where("published", "==", true),
+      orderBy("createdAt", "desc"),
+      limit(8)
+    );
+
+
+    const snap = await getDocs(q);
+
+
+    return snap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as News[];
+
+
+  } catch (error) {
+
+    console.log("Featured news error:", error);
+
+    return [];
+
+  }
+
+}
+/* ------------------------------------------------ */
+/* UPDATE */
+/* ------------------------------------------------ */
+
+export async function updateNews(id: string, news: Partial<News>) {
+  const ref = doc(db, "news", id);
+
+  await updateDoc(ref, {
+    ...news,
+  });
+}
+
+/* ------------------------------------------------ */
+/* DELETE */
+/* ------------------------------------------------ */
+
+export async function deleteNews(id: string) {
+  await deleteDoc(doc(db, "news", id));
+}
+
+/* ------------------------------------------------ */
+/* FEATURED TOGGLE */
+/* ------------------------------------------------ */
+
+export async function toggleFeatured(id: string, value: boolean) {
+  await updateDoc(doc(db, "news", id), {
+    featured: value,
+  });
+}
+
+/* ------------------------------------------------ */
+/* BREAKING TOGGLE */
+/* ------------------------------------------------ */
+
+export async function toggleBreaking(id: string, value: boolean) {
+  await updateDoc(doc(db, "news", id), {
+    breaking: value,
+  });
+}
+
+/* ------------------------------------------------ */
+/* PUBLISHED TOGGLE */
+/* ------------------------------------------------ */
+
+export async function togglePublished(id: string, value: boolean) {
+  await updateDoc(doc(db, "news", id), {
+    published: value,
+  });
+}
+
+/* ------------------------------------------------ */
+/* INCREMENT VIEW */
+/* ------------------------------------------------ */
+
+export async function incrementViews(id: string) {
+  await updateDoc(doc(db, "news", id), {
+    views: increment(1),
+  });
+}
+
+/* ------------------------------------------------ */
+/* SEARCH */
+/* ------------------------------------------------ */
+
+export function searchNews(news: News[], keyword: string) {
+  if (!keyword.trim()) return news;
+
+  const q = keyword.toLowerCase();
+
+  return news.filter((item) => {
+    return (
+      item.title.toLowerCase().includes(q) ||
+      item.excerpt.toLowerCase().includes(q) ||
+      item.content.toLowerCase().includes(q) ||
+      item.author.toLowerCase().includes(q)
+    );
+  });
+}
+
+/* ------------------------------------------------ */
+/* FILTER CATEGORY */
+/* ------------------------------------------------ */
+
+export function filterByCategory(
+  news: News[],
+  category: string
+) {
+  if (!category || category === "All") return news;
+
+  return news.filter(
+    (item) => item.category === category
+  );
+}
+
+/* ------------------------------------------------ */
+/* FILTER DISTRICT */
+/* ------------------------------------------------ */
+
+export function filterByDistrict(
+  news: News[],
+  district: string
+) {
+  if (!district || district === "All") return news;
+
+  return news.filter(
+    (item) => item.district === district
+  );
+}
+
+/* ------------------------------------------------ */
+/* FILTER PUBLISHED */
+/* ------------------------------------------------ */
+
+export function filterPublished(
+  news: News[],
+  value: string
+) {
+  if (value === "All") return news;
+
+  if (value === "Published")
+    return news.filter((n) => n.published);
+
+  if (value === "Draft")
+    return news.filter((n) => !n.published);
+
+  return news;
+}
+
+/* ------------------------------------------------ */
+/* SORT */
+/* ------------------------------------------------ */
+
+export function sortNews(news: News[]) {
+  return [...news].sort((a, b) => {
+    return (
+      new Date(b.publishedAt).getTime() -
+      new Date(a.publishedAt).getTime()
+    );
+  });
+}
+
+/* ------------------------------------------------ */
+/* STATISTICS */
+/* ------------------------------------------------ */
+
+export function getDashboardStats(news: News[]) {
+  return {
+    total: news.length,
+
+    published: news.filter((n) => n.published).length,
+
+    drafts: news.filter((n) => !n.published).length,
+
+    featured: news.filter((n) => n.featured).length,
+
+    breaking: news.filter((n) => n.breaking).length,
+
+    totalViews: news.reduce(
+      (sum, n) => sum + (n.views || 0),
+      0
+    ),
+  };
+}
+
+/* ------------------------------------------------ */
+/* RECENT */
+/* ------------------------------------------------ */
+
+export function getRecentNews(
+  news: News[],
+  count = 5
+) {
+  return [...news]
+    .sort((a, b) => {
+      return (
+        new Date(b.publishedAt).getTime() -
+        new Date(a.publishedAt).getTime()
+      );
+    })
+    .slice(0, count);
+}
+
+/* ------------------------------------------------ */
+/* SLUG */
+/* ------------------------------------------------ */
+
+export function generateSlug(title: string) {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/--+/g, "-");
+}
+
+/* ------------------------------------------------ */
+/* READ TIME */
+/* ------------------------------------------------ */
+
+export function calculateReadTime(content: string) {
+  const words = content
+    .trim()
+    .split(/\s+/).length;
+
+  const minutes = Math.max(
+    1,
+    Math.ceil(words / 200)
+  );
+
+  return `${minutes} min read`;
+}
+
+/* ------------------------------------------------ */
+/* DATE */
+/* ------------------------------------------------ */
+
+export function todayDate() {
+  return new Date().toLocaleDateString(
+    "en-GB",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }
+  );
+}
+/* ------------------------------------------------ */
+/* DISTRICT */
+/* ------------------------------------------------ */
+
+export async function getDistrictNews(
+  district: string
+): Promise<News[]> {
+
+  try {
+
+    const q = query(
+      newsCollection,
+      where("district", "==", district),
+      where("published", "==", true),
+      orderBy("createdAt", "desc")
+    );
+
+
+    const snap = await getDocs(q);
+
+
+    return snap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as News[];
+
+
+  } catch (error) {
+
+    console.log(
+      "District news error:",
+      error
+    );
+
+    return [];
+
+  }
+
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\services\storage.ts
+==================================================
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
+
+import { storage } from "@/lib/firebase";
+
+export async function uploadImage(file: File): Promise<string> {
+  const filename =
+    Date.now() +
+    "-" +
+    file.name.replace(/\s+/g, "-");
+
+  const imageRef = ref(storage, `news/${filename}`);
+
+  await uploadBytes(imageRef, file);
+
+  return await getDownloadURL(imageRef);
+}
+
+export async function deleteImage(url: string) {
+  try {
+    const path = decodeURIComponent(
+      url.split("/o/")[1].split("?")[0]
+    );
+
+    const imageRef = ref(storage, path);
+
+    await deleteObject(imageRef);
+  } catch {
+    console.log("Image already deleted.");
+  }
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\services\upload.ts
+==================================================
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\types\article.ts
+==================================================
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\types\job.ts
+==================================================
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\types\news.ts
+==================================================
+export interface Author {
+  id: string;
+  name: string;
+  image: string;
+  designation: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+}
+
+export interface News {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content?: string;
+  image: string;
+  category: string;
+  district?: string;
+  author: Author;
+  publishedAt: string;
+  readTime: string;
+  featured: boolean;
+  trending?: boolean;
+  views: number;
+}
+
+export interface Video {
+  id: string;
+  title: string;
+  thumbnail: string;
+  youtubeId: string;
+  publishedAt: string;
+}
+
+export interface Job {
+  id: string;
+  title: string;
+  organization: string;
+  lastDate: string;
+  link: string;
+}
+
+export interface TourismPlace {
+  id: string;
+  name: string;
+  image: string;
+  district: string;
+  description: string;
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\types\video.ts
+==================================================
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\ui\Badge.tsx
+==================================================
+interface BadgeProps {
+  text: string;
+}
+
+export default function Badge({ text }: BadgeProps) {
+  return (
+    <span className="inline-block bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+      {text}
+    </span>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\ui\Card.tsx
+==================================================
+interface CardProps {
+  children: React.ReactNode;
+}
+
+export default function Card({ children }: CardProps) {
+  return (
+    <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 overflow-hidden">
+      {children}
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\ui\Container.tsx
+==================================================
+interface ContainerProps {
+  children: React.ReactNode;
+}
+
+export default function Container({ children }: ContainerProps) {
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-12">
+      {children}
+    </section>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\ui\PrimaryButton.tsx
+==================================================
+interface PrimaryButtonProps {
+  children: React.ReactNode;
+}
+
+export default function PrimaryButton({
+  children,
+}: PrimaryButtonProps) {
+  return (
+    <button className="bg-red-600 hover:bg-red-700 transition text-white px-5 py-2 rounded-lg font-semibold">
+      {children}
+    </button>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\ui\SectionTitle.tsx
+==================================================
+interface SectionTitleProps {
+  title: string;
+  subtitle?: string;
+}
+
+export default function SectionTitle({
+  title,
+  subtitle,
+}: SectionTitleProps) {
+  return (
+    <div className="mb-8">
+      <h2 className="text-4xl font-bold text-gray-900">
+        {title}
+      </h2>
+
+      {subtitle && (
+        <p className="text-gray-500 mt-2">
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+}
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\middleware.ts
+==================================================
+import {
+  NextResponse,
+} from "next/server";
+
+import type {
+  NextRequest,
+} from "next/server";
+
+
+
+export function middleware(
+  request: NextRequest
+) {
+
+
+  const token =
+    request.cookies.get(
+      "auth-token"
+    );
+
+
+
+  const pathname =
+    request.nextUrl.pathname;
+
+
+
+  if (
+    pathname.startsWith(
+      "/admin"
+    )
+    &&
+    pathname !== "/admin/login"
+    &&
+    !token
+  ) {
+
+
+    return NextResponse.redirect(
+
+      new URL(
+        "/admin/login",
+        request.url
+      )
+
+    );
+
+
+  }
+
+
+
+  return NextResponse.next();
+
+}
+
+
+
+
+export const config = {
+
+  matcher: [
+    "/admin/:path*",
+  ],
+
+};
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\next-env.d.ts
+==================================================
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+import "./.next/types/routes.d.ts";
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+
+
+==================================================
+FILE: D:\New folder\Authentic-Sikkim\next.config.ts
+==================================================
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname:
+          "firebasestorage.googleapis.com",
+      },
+    ],
+  },
+
+};
+
+export default nextConfig;
+
+
