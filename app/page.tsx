@@ -4,57 +4,18 @@ import AdSlot from "@/components/ads/AdSlot";
 import LiveTicker from "@/components/home/LiveTicker";
 import dynamic from "next/dynamic";
 
-const Advertisement = dynamic(
-  () => import("@/components/home/Advertisement")
-);
-
-const CategoryGrid = dynamic(
-  () => import("@/components/home/CategoryGrid")
-);
-
-const Newsletter = dynamic(
-  () => import("@/components/home/Newsletter")
-);
-
-const WeatherWidget = dynamic(
-  () => import("@/components/home/WeatherWidget")
-);
-
-const StudentCorner = dynamic(
-  () => import("@/components/home/StudentCorner")
-);
-
-const MostRead = dynamic(
-  () => import("@/components/home/MostRead")
-);
-
-const Tourism = dynamic(
-  () => import("@/components/home/Tourism")
-);
-
-const GovernmentJobs = dynamic(
-  () => import("@/components/home/governmentJobs")
-);
-
-const HeroSlider = dynamic(
-  () => import("@/components/home/HeroSlider")
-);
-
-const LatestNews = dynamic(
-  () => import("@/components/home/LatestNews")
-);
-
-const FeaturedStory = dynamic(
-  () => import("@/components/home/FeaturedStory")
-);
-
-const DistrictNews = dynamic(
-  () => import("@/components/home/DistrictNews")
-);
-
-const TrendingSidebar = dynamic(
-  () => import("@/components/home/TrendingSidebar")
-);
+const CategoryGrid = dynamic(() => import("@/components/home/CategoryGrid"));
+const Newsletter = dynamic(() => import("@/components/home/Newsletter"));
+const WeatherWidget = dynamic(() => import("@/components/home/WeatherWidget"));
+const StudentCorner = dynamic(() => import("@/components/home/StudentCorner"));
+const MostRead = dynamic(() => import("@/components/home/MostRead"));
+const Tourism = dynamic(() => import("@/components/home/Tourism"));
+const GovernmentJobs = dynamic(() => import("@/components/home/governmentJobs"));
+const HeroSlider = dynamic(() => import("@/components/home/HeroSlider"));
+const LatestNews = dynamic(() => import("@/components/home/LatestNews"));
+const FeaturedStory = dynamic(() => import("@/components/home/FeaturedStory"));
+const DistrictNews = dynamic(() => import("@/components/home/DistrictNews"));
+const TrendingSidebar = dynamic(() => import("@/components/home/TrendingSidebar"));
 
 export default function HomePage() {
   return (
@@ -66,30 +27,25 @@ export default function HomePage() {
         <SearchBox />
       </section>
 
-      <section className="max-w-7xl mx-auto px-4 pb-8">
-        <div className="grid gap-8 lg:grid-cols-3">
+     <section className="max-w-7xl mx-auto px-4 pb-8">
+  <div className="grid gap-8 lg:grid-cols-3">
 
-         <div className="lg:col-span-2 space-y-12">
-            <HeroSlider />
-            <div className="lg:col-span-2 space-y-12">
-  <HeroSlider />
+    <div className="lg:col-span-2">
+      <HeroSlider />
+    </div>
 
-  {/* HOME TOP AD */}
+    <aside className="space-y-8">
+      <TrendingSidebar />
+      <AdSlot location="sidebar" />
+    </aside>
+
+  </div>
+</section>
+
+{/* HOME TOP AD */}
+<section className="max-w-7xl mx-auto px-4 pb-8">
   <AdSlot location="home-top" />
-</div>
-          </div>
-
-          <aside className="space-y-8">
-
-  <TrendingSidebar />
-
-  {/* SIDEBAR AD */}
-  <AdSlot location="sidebar" />
-
-</aside>
-
-        </div>
-      </section>
+</section>
 
       <section className="max-w-7xl mx-auto px-4 pb-8">
         <FeaturedStory />
@@ -121,15 +77,10 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 pb-8">
         <MostRead />
       </section>
-      <section className="max-w-7xl mx-auto px-4 pb-8">
-  <div className="border-b pb-12">
-    <DistrictNews />
-  </div>
-</section>
 
 {/* DISTRICT AD */}
 <section className="max-w-7xl mx-auto px-4 pb-8">
-  <AdSlot location="home-middle" />
+<AdSlot location="district-bottom" />
 </section>
 
       <section className="max-w-7xl mx-auto px-4 pb-8">
@@ -143,23 +94,11 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 pb-8">
         <StudentCorner />
       </section>
-<section className="max-w-7xl mx-auto px-4 pb-8">
-  <StudentCorner />
-</section>
-
-{/* HOME MIDDLE AD */}
-<section className="max-w-7xl mx-auto px-4 pb-8">
-  <AdSlot location="home-middle" />
-</section>
 
 <section className="max-w-7xl mx-auto px-4 pb-8">
   <Newsletter />
 </section>
-      <section className="max-w-7xl mx-auto px-4 pb-8">
-        <Newsletter />
-      </section>
-
-
+      
       <section className="max-w-7xl mx-auto px-4 pb-12">
         <WeatherWidget />
       </section>
