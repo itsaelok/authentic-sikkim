@@ -1,18 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import SectionTitle from "../common/SectionTitle";
 import NewsCard from "../common/NewsCard";
 
-import { getLatestNews, News } from "@/services/news";
+import { useHomeData } from "@/components/providers/HomeProvider";
 
 export default function LatestNews() {
-  const [news, setNews] = useState<News[]>([]);
+  const { latest, loading } = useHomeData();
 
-  useEffect(() => {
-    getLatestNews().then(setNews);
-  }, []);
+  if (loading) return null;
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-12">
@@ -22,12 +18,12 @@ export default function LatestNews() {
       />
 
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {news.map((article, index) => (
-  <NewsCard
-    key={article.id ?? index}
-    {...article}
-  />
-))}
+        {latest.map((article, index) => (
+          <NewsCard
+            key={article.id ?? index}
+            {...article}
+          />
+        ))}
       </div>
     </section>
   );

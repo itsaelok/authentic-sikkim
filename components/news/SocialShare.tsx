@@ -45,7 +45,7 @@ export default function SocialShare({
 
         <a
           href={`https://www.facebook.com/sharer/sharer.php?u=${url}`}
-          target="_blank"
+          target="Facebook"
           className="rounded-full bg-blue-600 p-4 text-white"
         >
           <FaFacebookF size={20} />
@@ -53,7 +53,7 @@ export default function SocialShare({
 
         <a
           href={`https://twitter.com/intent/tweet?text=${share}&url=${url}`}
-          target="_blank"
+          target="Twitter"
           className="rounded-full bg-black p-4 text-white"
         >
           <FaXTwitter size={20} />
@@ -61,7 +61,7 @@ export default function SocialShare({
 
         <a
           href={`https://wa.me/?text=${share}%20${url}`}
-          target="_blank"
+          target="Whatsapp"
           className="rounded-full bg-green-600 p-4 text-white"
         >
           <MessageCircle/>
@@ -69,7 +69,7 @@ export default function SocialShare({
 
         <a
           href={`https://t.me/share/url?url=${url}&text=${share}`}
-          target="_blank"
+          target="Telegram"
           className="rounded-full bg-sky-500 p-4 text-white"
         >
           <Send/>

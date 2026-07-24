@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -11,19 +10,15 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
-import { getFeaturedNews, News } from "@/services/news";
-
-
+import { useHomeData } from "@/components/providers/HomeProvider";
 
 export default function FeaturedStory() {
+  const { featured, loading } = useHomeData();
 
-  const [featuredNews, setFeaturedNews] = useState<News[]>([]);
-
-  useEffect(() => {
-    getFeaturedNews().then(setFeaturedNews);
-  }, []);
+  if (loading) return null;
 
   return (
+    // ...
     <section className="max-w-7xl mx-auto px-6 mt-8">
       <Swiper
         modules={[Autoplay, Navigation, Pagination]}
@@ -36,7 +31,7 @@ export default function FeaturedStory() {
         loop
         className="rounded-3xl overflow-hidden shadow-xl"
       >
-        {featuredNews.map((article) => (
+        {featured.map((article) => (
           <SwiperSlide key={article.slug}>
             <div className="relative h-[550px]">
              <Image

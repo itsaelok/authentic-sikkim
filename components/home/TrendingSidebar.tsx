@@ -1,18 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import SectionTitle from "../common/SectionTitle";
-
-import { getTrendingNews, News } from "@/services/news";
+import { useHomeData } from "@/components/providers/HomeProvider";
 
 export default function TrendingSidebar() {
-  const [news, setNews] = useState<News[]>([]);
+  const { trending, loading } = useHomeData();
 
-  useEffect(() => {
-    getTrendingNews().then(setNews);
-  }, []);
+if (loading) return null;
 
   return (
     <aside className="space-y-8 lg:sticky lg:top-24 h-fit">
@@ -28,7 +24,7 @@ export default function TrendingSidebar() {
 
           <div className="space-y-5 mt-5">
 
-            {news.slice(0, 8).map((item, index) => (
+            {trending.slice(0, 8).map((item, index) => (
 
               <Link
                 key={item.id}
