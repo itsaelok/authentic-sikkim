@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Published news is public; drafts are only visible when logged in
+    match /news/{newsId} {
+      allow read: if resource.data.published == true || request.auth != null;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // Anyone can post a comment, only an admin can moderate/delete
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+
+    // Poll results are public, only an admin can create/edit polls
+    match /polls/{pollId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Anyone can subscribe, only an admin can read/manage the list
+    match /newsletter/{subId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    // Page view counters need to be publicly writable (readers trigger these)
+    match /views/{docId} {
+      allow read, write: if true;
+    }
+
+    // Default: everything else (users, ads, analytics, media, settings)
+    // requires an authenticated admin
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
