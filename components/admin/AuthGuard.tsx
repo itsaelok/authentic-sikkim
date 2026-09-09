@@ -3,87 +3,48 @@
 import {
   useEffect,
   useState,
+  type ReactNode,
 } from "react";
 
-import {
-  onAuthStateChanged,
-} from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { onAuthStateChanged } from "firebase/auth";
 
-import {
-  useRouter,
-} from "next/navigation";
+import { auth } from "@/lib/firebase";
 
-import { auth } from "@/lib/auth";
-
-import {
-  getUserRole,
-} from "@/services/users";
-
-export default function AuthGuard({
-
-  children,
-
-}:{
-
-  children:React.ReactNode;
-
-}){
-
-const router=useRouter();
-
-const [loading,setLoading]=
-useState(true);
-
-useEffect(()=>{
-
-return onAuthStateChanged(
-
-auth,
-
-async(user)=>{
-
-if(!user){
-
-router.replace("/login");
-
-return;
-
+interface AuthGuardProps {
+  children: ReactNode;
 }
 
-const role=
+export default function AuthGuard({ children }: AuthGuardProps) {
+  const router = useRouter();
 
-await getUserRole(user.uid);
+  const [checked, setChecked] = useState(false);
+  const [allowed, setAllowed] = useState(false);
 
-if(!role){
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setAllowed(true);
+      } else {
+        setAllowed(false);
+        router.replace("/admin/login");
+      }
 
-router.replace("/login");
+      setChecked(true);
+    });
 
-return;
+    return () => unsubscribe();
+  }, [router]);
 
-}
+  if (!checked || !allowed) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <p className="text-lg font-semibold text-gray-500">
+          Checking access...
+        </p>
+      </div>
+    );
+  }
 
-setLoading(false);
-
-}
-
-);
-
-},[]);
-
-if(loading){
-
-return(
-
-<div className="flex h-screen items-center justify-center">
-
-Loading...
-
-</div>
-
-);
-
-}
-
-return children;
-
+  return <>{children}</>;
 }

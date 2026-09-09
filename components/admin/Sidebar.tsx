@@ -11,19 +11,43 @@ const menu = [
   },
   {
     name: "Create News",
-    href: "/admin/news/create",
+    href: "/admin/news/new",
   },
   {
     name: "Manage News",
     href: "/admin/news",
   },
   {
-    name: "Categories",
-    href: "/admin/categories",
+    name: "Media Library",
+    href: "/admin/media",
+  },
+  {
+    name: "Comments",
+    href: "/admin/comments",
+  },
+  {
+    name: "Polls",
+    href: "/admin/polls",
+  },
+  {
+    name: "Newsletter",
+    href: "/admin/newsletter",
+  },
+  {
+    name: "Analytics",
+    href: "/admin/analytics",
+  },
+  {
+    name: "Ads",
+    href: "/admin/ads",
+  },
+  {
+    name: "Users",
+    href: "/admin/users",
   },
   {
     name: "Settings",
-    href: "/admin/settings",
+    href: "/admin/setting",
   },
 ];
 
@@ -39,7 +63,7 @@ export default function Sidebar() {
 
   return (
 
-    <aside className="min-h-screen w-64 border-r bg-white p-5">
+    <aside className="fixed inset-y-0 left-0 hidden min-h-screen w-72 overflow-y-auto border-r bg-white p-5 lg:block">
 
 
       <div className="mb-8">

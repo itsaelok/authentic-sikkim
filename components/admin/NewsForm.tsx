@@ -15,7 +15,7 @@ import {
 
 import {
   uploadImage,
-} from "@/lib/cloudinary";
+} from "@/services/upload";
 
 
 
@@ -265,38 +265,6 @@ e.target.value
 
 
 
-
-
-<div>
-
-  <label className="font-semibold">
-    Upload Image
-  </label>
-
-  <input
-    type="file"
-    accept="image/*"
-    onChange={handleImage}
-  />
-
-  {imageLoading && (
-    <p className="text-sm text-gray-500">
-      Uploading image...
-    </p>
-  )}
-
-  {form.image && (
-    <div className="relative mt-3 h-40 w-full overflow-hidden rounded-lg">
-      <Image
-        src={form.image}
-        alt="Preview"
-        fill
-        className="object-cover"
-      />
-    </div>
-  )}
-
-</div>
 
 
 <div>
