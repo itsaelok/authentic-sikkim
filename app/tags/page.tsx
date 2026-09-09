@@ -1,0 +1,4 @@
+import Link from "next/link";
+export const metadata = { title: "Topics", description: "Browse Authentic Sikkim topics." };
+const topics=["Sikkim","Gangtok","Tourism","Education","Jobs","Politics","Business","Sports","Culture","Community"];
+export default function TagsPage(){return <main className="min-h-screen bg-slate-50"><div className="mx-auto max-w-4xl px-6 py-14"><p className="text-sm font-bold uppercase tracking-[0.2em] text-red-600">Browse</p><h1 className="mt-3 text-4xl font-black">Topics</h1><p className="mt-3 text-slate-600">Jump into a subject you care about.</p><div className="mt-8 flex flex-wrap gap-3">{topics.map(t=><Link key={t} href={`/category/${t.toLowerCase()}`} className="rounded-full bg-white px-5 py-3 font-semibold shadow-sm hover:text-red-600">{t}</Link>)}</div></div></main>}
